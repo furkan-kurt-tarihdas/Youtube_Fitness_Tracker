@@ -30,9 +30,9 @@ export default function WeeklyChart({ data }) {
           <View key={index} className="items-center h-full justify-end">
             <View className="w-7 flex-col-reverse justify-start items-center mb-3">
               {item.colors.length === 0 ? (
-                <View 
-                  className="w-full h-8 bg-black/5" 
-                  style={{ borderRadius: 6 }} 
+                <View
+                  className="w-full h-8 bg-black/5"
+                  style={{ borderRadius: 6 }}
                 />
               ) : (
                 item.colors
@@ -48,11 +48,12 @@ export default function WeeklyChart({ data }) {
                         style={{
                           backgroundColor: color,
                           height: i === 0 ? 50 : 35,
-                          marginBottom: i < filteredArray.length - 1 ? 4 : 0,
-                          borderTopLeftRadius: isTop ? 12 : 4,
-                          borderTopRightRadius: isTop ? 12 : 4,
-                          borderBottomLeftRadius: isBottom ? 12 : 4,
-                          borderBottomRightRadius: isBottom ? 12 : 4,
+                          // Aradaki boşluğu kaldırıyoruz ki tek sütun gibi görünsün
+                          marginBottom: 0, 
+                          borderTopLeftRadius: isTop ? 4 : 0,
+                          borderTopRightRadius: isTop ? 4 : 0,
+                          borderBottomLeftRadius: isBottom ? 4 : 0,
+                          borderBottomRightRadius: isBottom ? 4 : 0,
                         }}
                       />
                     );
@@ -68,8 +69,8 @@ export default function WeeklyChart({ data }) {
 
       {/* Renk Filtreleri */}
       <View className="px-8 mt-6">
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ alignItems: 'center' }}
         >
@@ -98,7 +99,7 @@ export default function WeeklyChart({ data }) {
             );
           })}
           {activeFilters.length > 0 && (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setActiveFilters([])}
               className="ml-2"
             >
