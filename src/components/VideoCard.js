@@ -1,12 +1,16 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { Play } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 import { colors } from '../utils/colors';
 
 export default function VideoCard({ video }) {
+  const navigation = useNavigation();
+
   return (
     <TouchableOpacity 
       activeOpacity={0.8}
+      onPress={() => navigation.navigate('VideoDetailScreen', { video })}
       className="flex-row bg-white rounded-3xl overflow-hidden mb-4 mx-6 shadow-sm shadow-gray-200"
       style={{ height: 110 }}
     >

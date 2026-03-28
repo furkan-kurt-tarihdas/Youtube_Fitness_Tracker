@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Home, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import HomeScreen from '../screens/HomeScreen';
+import HomeStackNavigator from './HomeStackNavigator';
 import ProfileScreen from '../screens/ProfileScreen';
 import { colors } from '../utils/colors';
 
@@ -39,7 +39,7 @@ export default function AppNavigator() {
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
+        component={HomeStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
             <View style={[styles.iconContainer, focused ? styles.focusedIconContainer : styles.unfocusedIconContainer]}>
