@@ -1,13 +1,12 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
-import { Play } from 'lucide-react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { Play, Pencil } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors } from '../utils/colors';
 
-export default function VideoCard({ video, onComplete }) {
+export default function VideoCard({ video, onComplete, onEditPress }) {
   const navigation = useNavigation();
 
-  // DB uses 'thumbnail_url'; support legacy 'thumbnail' field too
   const thumbnailUri = video.thumbnail_url || video.thumbnail;
 
   return (
@@ -26,7 +25,7 @@ export default function VideoCard({ video, onComplete }) {
           source={
             thumbnailUri
               ? { uri: thumbnailUri }
-              : require('../../assets/icon.png') // fallback
+              : require('../../assets/icon.png')
           }
           className="w-full h-full"
           resizeMode="cover"
@@ -57,6 +56,34 @@ export default function VideoCard({ video, onComplete }) {
           </Text>
         </View>
       </View>
+
+      {/* Edit Button */}
+      {onEditPress && (
+        <TouchableOpacity
+          style={styles.editBtn}
+          onPress={(e) => {
+            e.stopPropagation();
+            onEditPress(video);
+          }}
+          hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+        >
+          <Pencil size={15} color="#9A8FB5" strokeWidth={2} />
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  editBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 12,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(248,245,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

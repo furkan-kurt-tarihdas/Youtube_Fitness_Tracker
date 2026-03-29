@@ -38,19 +38,17 @@ export async function fetchWeeklyCompletions() {
 
   if (error) throw error;
 
-  // Build map: dateStr → [color, ...]
   const colorsByDate = {};
   completions.forEach(({ completed_date, videos: video }) => {
     if (!colorsByDate[completed_date]) colorsByDate[completed_date] = [];
     if (video?.theme_color) colorsByDate[completed_date].push(video.theme_color);
   });
 
-  // Build ordered 7-day array starting from 6 days ago → today
   const result = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
+    const dateStr = d.toISOString().split('T')[0];
     result.push({
       day: DAY_LABELS[d.getDay()],
       colors: colorsByDate[dateStr] ?? [],
@@ -105,8 +103,7 @@ export async function recordCompletion(videoId) {
 }
 
 /**
- * Fetch how many times a specific video was completed by the current user
- * (used to compute "current streak" or completion count on VideoCard).
+ * Fetch how many times a specific video was completed by the current user.
  */
 export async function fetchCompletionCountForVideo(videoId) {
   const { data: { user } } = await supabase.auth.getUser();
@@ -123,14 +120,29 @@ export async function fetchCompletionCountForVideo(videoId) {
 }
 
 /**
- * Add a new video to the database.
- * Extracts youtube_id from the full URL.
+ * Add a new video.
+ * Fetches title from YouTube oEmbed API automatically.
+ * Falls back to provided title or generic label.
  */
-export async function addVideo(youtubeUrl, title, themeColor) {
+export async function addVideo(youtubeUrl, titleHint, themeColor) {
   const youtubeId = extractYoutubeId(youtubeUrl);
   if (!youtubeId) throw new Error('Geçersiz YouTube linki. Lütfen kontrol edin.');
 
   const thumbnailUrl = `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`;
+
+  // Fetch real title via oEmbed
+  let title = titleHint || 'YouTube Videosu';
+  try {
+    const res = await fetch(
+      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${youtubeId}&format=json`
+    );
+    if (res.ok) {
+      const json = await res.json();
+      if (json.title) title = json.title;
+    }
+  } catch {
+    // oEmbed failed — silently use hint/fallback
+  }
 
   const { data, error } = await supabase
     .from('videos')
@@ -144,7 +156,6 @@ export async function addVideo(youtubeUrl, title, themeColor) {
     .single();
 
   if (error) {
-    // Unique violation = video already exists
     if (error.code === '23505') throw new Error('Bu video zaten eklenmiş.');
     throw error;
   }
@@ -152,11 +163,37 @@ export async function addVideo(youtubeUrl, title, themeColor) {
   return data;
 }
 
+/**
+ * Update a video's title and/or theme color.
+ */
+export async function updateVideo(id, newTitle, newColor) {
+  const { data, error } = await supabase
+    .from('videos')
+    .update({ title: newTitle.trim(), theme_color: newColor })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Delete a video and its associated completions (cascade handled by DB FK).
+ */
+export async function deleteVideo(id) {
+  const { error } = await supabase
+    .from('videos')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
 // ─── Helpers ───────────────────────────────────────────────
 
 function extractYoutubeId(url) {
   try {
-    // Handles: youtu.be/ID, youtube.com/watch?v=ID, youtube.com/shorts/ID
     const patterns = [
       /youtu\.be\/([A-Za-z0-9_-]{11})/,
       /[?&]v=([A-Za-z0-9_-]{11})/,
