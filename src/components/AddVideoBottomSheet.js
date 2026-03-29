@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
   withSpring,
   Easing,
+  runOnJS,
 } from 'react-native-reanimated';
 import { useAddVideo } from '../context/AddVideoContext';
 import { addVideo } from '../services/db';
@@ -28,6 +29,9 @@ const THEME_COLORS = [
 export default function AddVideoBottomSheet() {
   const { isBottomSheetVisible, hide } = useAddVideo();
 
+  // Local state to keep Modal mounted during exit animation
+  const [shouldRender, setShouldRender] = useState(isBottomSheetVisible);
+
   const [youtubeLink, setYoutubeLink] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
   const [themeColor, setThemeColor] = useState(THEME_COLORS[0].hex);
@@ -39,18 +43,26 @@ export default function AddVideoBottomSheet() {
 
   useEffect(() => {
     if (isBottomSheetVisible) {
-      // Show animations
-      overlayOpacity.value = withTiming(1, { duration: 300 });
-      sheetTranslateY.value = withSpring(0, {
-        damping: 20,
-        stiffness: 90,
-      });
+      setShouldRender(true);
+      // Wait a tiny bit for Modal to mount before starting animation
+      const timer = setTimeout(() => {
+        overlayOpacity.value = withTiming(1, { duration: 300 });
+        sheetTranslateY.value = withSpring(0, {
+          damping: 25, // Slightly less bouncy
+          stiffness: 100,
+        });
+      }, 50);
+      return () => clearTimeout(timer);
     } else {
       // Hide animations
       overlayOpacity.value = withTiming(0, { duration: 250 });
       sheetTranslateY.value = withTiming(SCREEN_HEIGHT, { 
-        duration: 250,
-        easing: Easing.bezier(0.25, 0.1, 0.25, 1) 
+        duration: 300,
+        easing: Easing.out(Easing.exp) // Smoother exit
+      }, (finished) => {
+        if (finished) {
+          runOnJS(setShouldRender)(false);
+        }
       });
       
       // Clear inputs
@@ -85,11 +97,13 @@ export default function AddVideoBottomSheet() {
     }
   }
 
+  if (!shouldRender && !isBottomSheetVisible) return null;
+
   return (
     <Modal
-      visible={isBottomSheetVisible}
+      visible={shouldRender}
       transparent
-      animationType="none" // Custom animation handled by reanimated
+      animationType="none"
       onRequestClose={hide}
     >
       <View style={styles.container}>
@@ -163,6 +177,12 @@ export default function AddVideoBottomSheet() {
                 </TouchableOpacity>
               </View>
             </View>
+            
+            {/* 🛡️ GAP BUFFER:
+                We add a view that extends below the sheet to "fill" the gap 
+                during spring overshoot/bounce. 
+            */}
+            <View style={styles.bottomBuffer} />
           </Animated.View>
         </KeyboardAvoidingView>
       </View>
@@ -177,7 +197,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(30,30,50,0.45)', // Slightly adjusted to be more subtle
+    backgroundColor: 'rgba(20,15,40,0.5)', // Slightly deeper for better focus
   },
   absoluteFull: {
     flex: 1,
@@ -195,6 +215,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 24,
     elevation: 20,
+  },
+  bottomBuffer: {
+    position: 'absolute',
+    bottom: -200, // Extends far below
+    left: 0,
+    right: 0,
+    height: 200,
+    backgroundColor: '#FDFAF8', // Same as sheet background
   },
   handle: {
     width: 44,
