@@ -26,6 +26,39 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-share-intent",
+        {
+          "iosActivationRules": {
+            "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
+            "NSExtensionActivationSupportsText": false,
+            "NSExtensionActivationSupportsImage": false,
+            "NSExtensionActivationSupportsVideo": false
+          },
+          "androidMainActivityAttributes": {
+            "android:launchMode": "singleTask"
+          },
+          "androidIntentFilters": [
+            {
+              "action": "android.intent.action.SEND",
+              "category": ["android.intent.category.DEFAULT"],
+              "data": [{ "mimeType": "text/plain" }]
+            },
+            {
+              "action": "android.intent.action.SEND",
+              "category": ["android.intent.category.DEFAULT"],
+              "data": [{ "scheme": "https", "host": "*.youtube.com", "pathPattern": ".*" }]
+            },
+            {
+              "action": "android.intent.action.SEND",
+              "category": ["android.intent.category.DEFAULT"],
+              "data": [{ "scheme": "https", "host": "youtu.be", "pathPattern": ".*" }]
+            }
+          ]
+        }
+      ]
+    ]
   }
 }
