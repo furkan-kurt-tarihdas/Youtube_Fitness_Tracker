@@ -6,7 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { useShareIntent } from "expo-share-intent";
 import { addVideo } from "./src/services/db";
-import { AddVideoProvider } from "./src/context/AddVideoContext";
+import { AddVideoProvider, useAddVideo } from "./src/context/AddVideoContext";
 import AddVideoBottomSheet from "./src/components/AddVideoBottomSheet";
 
 const YOUTUBE_REGEX = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
@@ -19,6 +19,7 @@ function randomPastel() {
 
 function ShareIntentHandler() {
   const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
+  const { notifyVideoAdded } = useAddVideo();
 
   useEffect(() => {
     if (!hasShareIntent) return;
@@ -34,6 +35,7 @@ function ShareIntentHandler() {
       try {
         await addVideo(url, 'Shared Video', randomPastel());
         console.log('✅ Video added via Share Intent');
+        notifyVideoAdded(); // Instantly refresh HomeScreen
       } catch (err) {
         console.log('Share Intent Error:', err.message);
       } finally {
