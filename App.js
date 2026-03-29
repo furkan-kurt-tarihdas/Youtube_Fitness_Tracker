@@ -32,14 +32,10 @@ function ShareIntentHandler() {
 
     (async () => {
       try {
-        await addVideo(url, 'YouTube\'dan Eklenen Video', randomPastel());
-        Alert.alert('✅ Video Eklendi', 'YouTube videosu listenize eklendi!');
+        await addVideo(url, 'Shared Video', randomPastel());
+        console.log('✅ Video added via Share Intent');
       } catch (err) {
-        if (err.message.includes('zaten eklenmiş')) {
-          Alert.alert('Zaten Var', 'Bu video listenizde zaten mevcut.');
-        } else {
-          Alert.alert('Hata', err.message);
-        }
+        console.log('Share Intent Error:', err.message);
       } finally {
         resetShareIntent();
       }

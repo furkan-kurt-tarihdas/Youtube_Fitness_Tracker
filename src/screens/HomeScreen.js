@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import {
   SafeAreaView, ScrollView, View, Text, StatusBar,
   TextInput, TouchableOpacity, Modal, Pressable,
-  StyleSheet, ActivityIndicator, Animated,
+  StyleSheet, ActivityIndicator, Animated, AppState,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../utils/colors';
@@ -65,7 +65,21 @@ export default function HomeScreen() {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+      
+      const subscription = AppState.addEventListener('change', (nextAppState) => {
+        if (nextAppState === 'active') {
+          loadData();
+        }
+      });
+      
+      return () => {
+        subscription.remove();
+      };
+    }, [loadData])
+  );
 
   // ─── Edit modal ──────────────────────────────────────────
   function openEditModal(video) {

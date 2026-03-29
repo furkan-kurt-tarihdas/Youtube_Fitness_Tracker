@@ -40,49 +40,49 @@ export default function VideoCard({ video, onComplete, onEditPress }) {
       {/* Info */}
       <View className="flex-1 justify-center px-5 py-3">
         <Text
-          className="text-base font-bold mb-3"
+          className="text-base font-bold mb-2"
           style={{ color: colors.text }}
           numberOfLines={2}
         >
           {video.title}
         </Text>
-        <View className="flex-row items-center">
-          <View
-            className="w-2.5 h-2.5 rounded-full mr-2"
-            style={{ backgroundColor: video.theme_color || video.themeColor }}
-          />
-          <Text className="text-xs font-medium text-gray-500">
-            {video.youtube_id ? `youtube.com/watch?v=${video.youtube_id}` : 'Tap to watch'}
-          </Text>
+        
+        <View className="flex-row items-center justify-between mt-auto">
+          <View className="flex-row items-center flex-1 pr-2">
+            <View
+              className="w-2.5 h-2.5 rounded-full mr-2"
+              style={{ backgroundColor: video.theme_color || video.themeColor }}
+            />
+            <Text className="text-xs font-medium text-gray-500" numberOfLines={1}>
+              {video.youtube_id ? `youtube.com/watch?v=${video.youtube_id}` : 'Tap to watch'}
+            </Text>
+          </View>
+
+          {/* Edit Button */}
+          {onEditPress && (
+            <TouchableOpacity
+              style={styles.editBtn}
+              onPress={(e) => {
+                e.stopPropagation();
+                onEditPress(video);
+              }}
+              hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+            >
+              <Pencil size={14} color="#9A8FB5" strokeWidth={2} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-
-      {/* Edit Button */}
-      {onEditPress && (
-        <TouchableOpacity
-          style={styles.editBtn}
-          onPress={(e) => {
-            e.stopPropagation();
-            onEditPress(video);
-          }}
-          hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-        >
-          <Pencil size={15} color="#9A8FB5" strokeWidth={2} />
-        </TouchableOpacity>
-      )}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   editBtn: {
-    position: 'absolute',
-    top: 10,
-    right: 12,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(248,245,255,0.9)',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F3EEF9',
     alignItems: 'center',
     justifyContent: 'center',
   },
