@@ -5,17 +5,28 @@ import { colors } from '../utils/colors';
 export default function Header({ isEmpty }) {
   return (
     <View className="px-6 pt-4 mt-2">
-      {/* Top Row: Avatar + Streak */}
       <View className="flex-row items-center justify-between mb-2">
-        <View className="flex-row items-center">
+        {/* Left: Avatar + Texts */}
+        <View className="flex-row items-center flex-1 mr-2">
           <Image
             source={{ uri: 'https://i.pravatar.cc/150?img=47' }}
-            className="w-12 h-12 rounded-full mr-4 bg-gray-200"
+            className="w-12 h-12 rounded-full mr-3 bg-gray-200"
           />
-          <Text className="text-lg font-bold" style={{ color: colors.text }}>
-            Hello, Michelle!
-          </Text>
+          <View className="flex-1">
+            <Text className="text-lg font-bold" style={{ color: colors.text }} numberOfLines={1}>
+              Hello, Michelle!
+            </Text>
+            <Text 
+              className="text-sm" 
+              style={{ color: '#9CA3AF' }}
+              numberOfLines={2}
+            >
+              {isEmpty ? 'Add a video to get started!' : 'Ready to track your habits today?'}
+            </Text>
+          </View>
         </View>
+
+        {/* Right: Streak Badge */}
         <View
           className="px-3 py-1.5 rounded-xl flex-row items-center"
           style={{ backgroundColor: colors.secondary }}
@@ -25,11 +36,6 @@ export default function Header({ isEmpty }) {
           </Text>
         </View>
       </View>
-
-      {/* Subtitle Row */}
-      <Text className="text-sm" style={{ color: '#9CA3AF', paddingLeft: 64 }}>
-        {isEmpty ? 'Add a video to get started!' : 'Ready to track your habits today?'}
-      </Text>
     </View>
   );
 }

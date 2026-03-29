@@ -22,11 +22,11 @@ export default function WeeklyChart({ data, isEmpty }) {
   };
 
   return (
-    <View className="mt-2 mb-2">
+    <View className="mt-0 mb-2">
       {/* Grafiğin Kendisi — empty ise overlay göster */}
       <View style={{ position: 'relative' }}>
-        <View 
-          className="flex-row justify-between items-end px-8 py-2 h-48"
+        <View
+          className="flex-row justify-between items-end px-8 py-0 h-48"
           style={{ opacity: isEmpty ? 0.25 : 1 }}
         >
           {data.map((item, index) => (
@@ -70,7 +70,7 @@ export default function WeeklyChart({ data, isEmpty }) {
 
         {/* Empty State Overlay */}
         {isEmpty && (
-          <View 
+          <View
             style={{
               position: 'absolute',
               top: 0, left: 0, right: 0, bottom: 0,
@@ -79,7 +79,7 @@ export default function WeeklyChart({ data, isEmpty }) {
               paddingHorizontal: 32,
             }}
           >
-            <Text 
+            <Text
               className="text-sm font-semibold text-center"
               style={{ color: '#9CA3AF', lineHeight: 22 }}
             >
