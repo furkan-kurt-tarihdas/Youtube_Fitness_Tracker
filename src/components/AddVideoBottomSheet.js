@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   Modal, Pressable, StyleSheet, ActivityIndicator,
-  Alert, KeyboardAvoidingView, Platform, Dimensions,
+  KeyboardAvoidingView, Platform, Dimensions,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -27,7 +27,7 @@ const THEME_COLORS = [
 ];
 
 export default function AddVideoBottomSheet() {
-  const { isBottomSheetVisible, hide } = useAddVideo();
+  const { isBottomSheetVisible, hide, notifyVideoAdded } = useAddVideo();
 
   // Local state to keep Modal mounted during exit animation
   const [shouldRender, setShouldRender] = useState(isBottomSheetVisible);
@@ -84,15 +84,16 @@ export default function AddVideoBottomSheet() {
 
   async function handleAdd() {
     if (!youtubeLink.trim() || !videoTitle.trim()) {
-      Alert.alert('Eksik Bilgi', 'Lütfen YouTube linkini ve video başlığını girin.');
+      console.warn('Add Video: missing URL or title');
       return;
     }
     setAdding(true);
     try {
       await addVideo(youtubeLink.trim(), videoTitle.trim(), themeColor);
       hide();
+      notifyVideoAdded(); // Instantly refresh HomeScreen
     } catch (err) {
-      Alert.alert('Hata', err.message);
+      console.warn('Add Video Error:', err.message);
     } finally {
       setAdding(false);
     }
@@ -120,8 +121,8 @@ export default function AddVideoBottomSheet() {
             <View style={styles.handle} />
 
             <View style={styles.content}>
-              <Text style={styles.title}>Manuel Video Ekle</Text>
-              <Text style={styles.subtitle}>YouTube linkini ve video adını yazarak listene ekleyebilirsin.</Text>
+              <Text style={styles.title}>Add Video</Text>
+              <Text style={styles.subtitle}>Paste a YouTube link and give it a title.</Text>
 
               <TextInput
                 style={styles.input}
@@ -140,7 +141,7 @@ export default function AddVideoBottomSheet() {
                 onChangeText={setVideoTitle}
               />
 
-              <Text style={styles.colorLabel}>Kart Rengi Seç</Text>
+              <Text style={styles.colorLabel}>Choose Card Color</Text>
               <View style={styles.colorRow}>
                 {THEME_COLORS.map((c) => (
                   <TouchableOpacity
@@ -160,7 +161,7 @@ export default function AddVideoBottomSheet() {
                   style={[styles.btn, styles.cancelBtn]}
                   onPress={hide}
                 >
-                  <Text style={styles.cancelText}>Vazgeç</Text>
+                  <Text style={styles.cancelText}>Cancel</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -171,7 +172,7 @@ export default function AddVideoBottomSheet() {
                   {adding ? (
                     <ActivityIndicator color="white" size="small" />
                   ) : (
-                    <Text style={styles.addText}>Ekle</Text>
+                    <Text style={styles.addText}>Add</Text>
                   )}
                 </TouchableOpacity>
               </View>

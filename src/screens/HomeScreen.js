@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   SafeAreaView, ScrollView, View, Text, StatusBar,
   TextInput, TouchableOpacity, Modal, Pressable,
@@ -7,6 +7,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../utils/colors';
 import { fetchVideos, fetchWeeklyCompletions, updateVideo, deleteVideo } from '../services/db';
+import { useAddVideo } from '../context/AddVideoContext';
 import Header from '../components/Header';
 import WeeklyChart from '../components/WeeklyChart';
 import VideoCard from '../components/VideoCard';
@@ -36,6 +37,12 @@ export default function HomeScreen() {
   const [editColor, setEditColor]                   = useState('');
   const [saving, setSaving]                         = useState(false);
   const [deleting, setDeleting]                     = useState(false);
+
+  // Register loadData as the refresh callback for AddVideoBottomSheet
+  const { registerOnVideoAdded } = useAddVideo();
+  useEffect(() => {
+    registerOnVideoAdded(loadData);
+  }, [loadData]);
 
   // ─── Toast helper ────────────────────────────────────────
   function showToast(message, type = 'success') {
