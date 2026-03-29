@@ -59,7 +59,7 @@ export default function HomeScreen() {
       setVideos(vids);
       setWeeklyData(weekly);
     } catch {
-      showToast('Veriler yüklenemedi.', 'error');
+      showToast('Failed to load data.', 'error');
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export default function HomeScreen() {
       await updateVideo(editingVideo.id, editTitle, editColor);
       closeEditModal();
       await loadData();
-      showToast('Video güncellendi! ✏️');
+      showToast('Video updated! ✏️');
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -107,7 +107,7 @@ export default function HomeScreen() {
       await deleteVideo(editingVideo.id);
       closeEditModal();
       await loadData();
-      showToast('Video silindi. 🗑️');
+      showToast('Video deleted. 🗑️');
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -130,13 +130,13 @@ export default function HomeScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      {/* Toast Notification */}
+      {/* Toast Notification — above nav bar */}
       {toast.visible && (
         <Animated.View
           style={[
             styles.toast,
             toast.type === 'error' ? styles.toastError : styles.toastSuccess,
-            { opacity: toastAnim, transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }] },
+            { opacity: toastAnim, transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] },
           ]}
           pointerEvents="none"
         >
@@ -180,8 +180,8 @@ export default function HomeScreen() {
       >
         <Pressable style={styles.modalOverlay} onPress={closeEditModal}>
           <Pressable style={styles.modalCard} onPress={() => {}}>
-            <Text style={styles.modalTitle}>Video Düzenle</Text>
-            <Text style={styles.modalSubtitle}>Başlık veya kart rengini değiştirebilirsin.</Text>
+            <Text style={styles.modalTitle}>Edit Video</Text>
+            <Text style={styles.modalSubtitle}>You can change the title or card color.</Text>
 
             {/* Read-only URL field */}
             <TextInput
@@ -197,14 +197,14 @@ export default function HomeScreen() {
             {/* Editable title */}
             <TextInput
               style={styles.input}
-              placeholder="Video Başlığı"
+              placeholder="Video Title"
               placeholderTextColor="#C4B8D4"
               value={editTitle}
               onChangeText={setEditTitle}
             />
 
             {/* Color picker */}
-            <Text style={styles.colorLabel}>Kart Rengi Seç</Text>
+            <Text style={styles.colorLabel}>Choose card color</Text>
             <View style={styles.colorRow}>
               {THEME_COLORS.map((c) => (
                 <TouchableOpacity
@@ -228,7 +228,7 @@ export default function HomeScreen() {
               >
                 {deleting
                   ? <ActivityIndicator color="white" size="small" />
-                  : <Text style={styles.deleteBtnText}>🗑️ Sil</Text>}
+                  : <Text style={styles.deleteBtnText}>🗑️ Delete</Text>}
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -241,7 +241,7 @@ export default function HomeScreen() {
               >
                 {saving
                   ? <ActivityIndicator color="white" size="small" />
-                  : <Text style={styles.saveBtnText}>Kaydet</Text>}
+                  : <Text style={styles.saveBtnText}>Save</Text>}
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -257,17 +257,17 @@ function ShareIntentInfoCard() {
   return (
     <View style={styles.infoCard}>
       <Text style={styles.infoEmoji}>📱</Text>
-      <Text style={styles.infoTitle}>YouTube'dan Paylaş!</Text>
+      <Text style={styles.infoTitle}>Share from YouTube!</Text>
       <Text style={styles.infoBody}>
-        YouTube uygulamasında bir video açıp{' '}
-        <Text style={{ fontWeight: '700' }}>Paylaş → Lavender</Text>{' '}
-        seçeneğine dokun. Video otomatik olarak listenize eklenir.
+        Open any video in the YouTube app and tap{' '}
+        <Text style={{ fontWeight: '700' }}>Share → Lavender</Text>.
+        The video will be added to your list automatically.
       </Text>
       <View style={styles.infoDivider} />
       <Text style={styles.infoHint}>
-        Ya da aşağıdaki{' '}
+        Or tap the{' '}
         <Text style={{ fontWeight: '700' }}>+</Text>{' '}
-        butonuna dokunarak manuel ekleyebilirsin.
+        button below to add a link manually.
       </Text>
     </View>
   );
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   // Toast
   toast: {
     position: 'absolute',
-    top: 16,
+    bottom: 104,
     left: 24,
     right: 24,
     zIndex: 999,

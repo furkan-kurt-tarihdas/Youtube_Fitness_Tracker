@@ -80,7 +80,7 @@ export async function fetchCompletionsForVideo(videoId) {
  */
 export async function recordCompletion(videoId) {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Oturum açmanız gerekiyor.');
+  if (!user) throw new Error('You need to be signed in.');
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -95,7 +95,7 @@ export async function recordCompletion(videoId) {
     .single();
 
   if (error) {
-    if (error.code === '23505') throw new Error('Bugün bu videoyu zaten tamamladınız!');
+    if (error.code === '23505') throw new Error('You already completed this video today!');
     throw error;
   }
 
@@ -126,7 +126,7 @@ export async function fetchCompletionCountForVideo(videoId) {
  */
 export async function addVideo(youtubeUrl, titleHint, themeColor) {
   const youtubeId = extractYoutubeId(youtubeUrl);
-  if (!youtubeId) throw new Error('Geçersiz YouTube linki. Lütfen kontrol edin.');
+  if (!youtubeId) throw new Error('Invalid YouTube link. Please check the URL.');
 
   const thumbnailUrl = `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`;
 
@@ -156,7 +156,7 @@ export async function addVideo(youtubeUrl, titleHint, themeColor) {
     .single();
 
   if (error) {
-    if (error.code === '23505') throw new Error('Bu video zaten eklenmiş.');
+    if (error.code === '23505') throw new Error('This video has already been added.');
     throw error;
   }
 
@@ -167,15 +167,12 @@ export async function addVideo(youtubeUrl, titleHint, themeColor) {
  * Update a video's title and/or theme color.
  */
 export async function updateVideo(id, newTitle, newColor) {
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('videos')
     .update({ title: newTitle.trim(), theme_color: newColor })
-    .eq('id', id)
-    .select()
-    .single();
+    .eq('id', id);
 
   if (error) throw error;
-  return data;
 }
 
 /**
