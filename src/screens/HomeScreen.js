@@ -17,9 +17,9 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingBottom: 130 }}
         showsVerticalScrollIndicator={false}
       >
-        <Header />
+        <Header isEmpty={!hasVideos} />
 
-        <WeeklyChart data={mockWeeklyLog} />
+        <WeeklyChart data={mockWeeklyLog} isEmpty={!hasVideos} />
 
         <View className="px-6 mt-6 mb-5">
           <Text className="text-xl font-extrabold" style={{ color: colors.text }}>
