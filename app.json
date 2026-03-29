@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.Youtube-Fitness-Tracker"
+      "bundleIdentifier": "com.lavender.youtubefitnesstracker"
     },
     "android": {
       "adaptiveIcon": {
