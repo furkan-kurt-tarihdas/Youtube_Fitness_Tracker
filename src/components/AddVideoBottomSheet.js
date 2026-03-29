@@ -44,21 +44,22 @@ export default function AddVideoBottomSheet() {
   useEffect(() => {
     if (isBottomSheetVisible) {
       setShouldRender(true);
-      // Wait a tiny bit for Modal to mount before starting animation
+      // Wait for Modal mount
       const timer = setTimeout(() => {
-        overlayOpacity.value = withTiming(1, { duration: 300 });
+        overlayOpacity.value = withTiming(1, { duration: 400 });
         sheetTranslateY.value = withSpring(0, {
-          damping: 25, // Slightly less bouncy
-          stiffness: 100,
+          damping: 20,
+          stiffness: 80,
+          mass: 1,
         });
       }, 50);
       return () => clearTimeout(timer);
     } else {
-      // Hide animations
-      overlayOpacity.value = withTiming(0, { duration: 250 });
+      // Slower, smoother hide animation
+      overlayOpacity.value = withTiming(0, { duration: 400 });
       sheetTranslateY.value = withTiming(SCREEN_HEIGHT, { 
-        duration: 300,
-        easing: Easing.out(Easing.exp) // Smoother exit
+        duration: 450,
+        easing: Easing.bezier(0.33, 1, 0.68, 1) // Smooth ease-out
       }, (finished) => {
         if (finished) {
           runOnJS(setShouldRender)(false);
@@ -107,7 +108,6 @@ export default function AddVideoBottomSheet() {
       onRequestClose={hide}
     >
       <View style={styles.container}>
-        {/* Fading Backdrop Overlay */}
         <Animated.View style={[styles.overlay, animatedOverlayStyle]}>
           <Pressable style={styles.absoluteFull} onPress={hide} />
         </Animated.View>
@@ -116,7 +116,6 @@ export default function AddVideoBottomSheet() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
         >
-          {/* Sliding Sheet */}
           <Animated.View style={[styles.sheet, animatedSheetStyle]}>
             <View style={styles.handle} />
 
@@ -177,12 +176,6 @@ export default function AddVideoBottomSheet() {
                 </TouchableOpacity>
               </View>
             </View>
-            
-            {/* 🛡️ GAP BUFFER:
-                We add a view that extends below the sheet to "fill" the gap 
-                during spring overshoot/bounce. 
-            */}
-            <View style={styles.bottomBuffer} />
           </Animated.View>
         </KeyboardAvoidingView>
       </View>
@@ -197,7 +190,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(20,15,40,0.5)', // Slightly deeper for better focus
+    backgroundColor: 'rgba(20,15,40,0.5)',
   },
   absoluteFull: {
     flex: 1,
@@ -209,20 +202,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDFAF8',
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+    // EXPLAIN: Padding bottom ensures no gap during spring bounce
+    paddingBottom: Platform.OS === 'ios' ? 340 : 320, 
+    marginBottom: -300, // Anchors the visible part back to the bottom
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -12 },
     shadowOpacity: 0.1,
     shadowRadius: 24,
     elevation: 20,
-  },
-  bottomBuffer: {
-    position: 'absolute',
-    bottom: -200, // Extends far below
-    left: 0,
-    right: 0,
-    height: 200,
-    backgroundColor: '#FDFAF8', // Same as sheet background
   },
   handle: {
     width: 44,
