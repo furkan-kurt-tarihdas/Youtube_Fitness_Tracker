@@ -5,29 +5,37 @@ import { mockVideos, mockWeeklyLog } from '../data/mockData';
 import Header from '../components/Header';
 import WeeklyChart from '../components/WeeklyChart';
 import VideoCard from '../components/VideoCard';
+import EmptyState from '../components/EmptyState';
 
 export default function HomeScreen() {
+  const hasVideos = mockVideos.length > 0;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-      <ScrollView 
-        contentContainerStyle={{ paddingBottom: 130 }} // Spacer for tab bar
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 130 }}
         showsVerticalScrollIndicator={false}
       >
         <Header />
-        
+
         <WeeklyChart data={mockWeeklyLog} />
-        
+
         <View className="px-6 mt-6 mb-5">
           <Text className="text-xl font-extrabold" style={{ color: colors.text }}>
             Daily Challenge
           </Text>
         </View>
-        
-        {mockVideos.map((video) => (
-          <VideoCard key={video.id} video={video} />
-        ))}
+
+        {hasVideos ? (
+          mockVideos.map((video) => (
+            <VideoCard key={video.id} video={video} />
+          ))
+        ) : (
+          <EmptyState />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
+
