@@ -1,20 +1,19 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Home, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeStackNavigator from './HomeStackNavigator';
 import ProfileScreen from '../screens/ProfileScreen';
+import AuthScreen from '../screens/AuthScreen';
 import { colors } from '../utils/colors';
+import { supabase } from '../services/supabase';
 
 const Tab = createBottomTabNavigator();
 
-export default function AppNavigator() {
+function MainTabs() {
   const insets = useSafeAreaInsets();
-
-  // Alt boşluğa notch insets değeri eklenecek ki iPhone'larda home indicator ile çakışmasın
-  const bottomMargin = Math.max(insets.bottom, 20);
 
   return (
     <Tab.Navigator
@@ -30,10 +29,10 @@ export default function AppNavigator() {
           backgroundColor: colors.tabBackground,
           borderTopLeftRadius: 30,
           borderTopRightRadius: 30,
-          height: 100, // Taşmayı tam engellemek için yüksek tutuldu
+          height: 100,
           borderTopWidth: 0,
           paddingBottom: insets.bottom > 0 ? insets.bottom : 20,
-          paddingTop: 25, // İkonları ortaya ve biraz aşağı iterek taşmasını engeller
+          paddingTop: 25,
         },
       }}
     >
@@ -63,7 +62,43 @@ export default function AppNavigator() {
   );
 }
 
+export default function AppNavigator() {
+  const [session, setSession] = useState(undefined); // undefined = loading
+
+  useEffect(() => {
+    // Mevcut oturumu kontrol et
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Auth durumu değişikliklerini dinle
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Oturum durumu belirsizken yükleme ekranı göster
+  if (session === undefined) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  // Session yoksa Auth ekranı, varsa ana uygulama
+  return session ? <MainTabs /> : <AuthScreen />;
+}
+
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
   iconContainer: {
     width: 60,
     height: 60,

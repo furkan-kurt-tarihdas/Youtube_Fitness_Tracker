@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { 
   View, Text, Image, ScrollView, TouchableOpacity, SafeAreaView, 
-  StatusBar, Modal, Switch, TextInput, Pressable 
+  StatusBar, Modal, Switch, TextInput, Pressable, ActivityIndicator, Alert
 } from 'react-native';
 import { Bell, User, LogOut, ChevronRight } from 'lucide-react-native';
 import { colors } from '../utils/colors';
+import { supabase } from '../services/supabase';
 
 const STATS = [
   { value: '12', label: 'Total Videos', bg: colors.secondary },
@@ -17,6 +18,21 @@ export default function ProfileScreen() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
   const [showSignOut, setShowSignOut] = useState(false);
+  const [signOutLoading, setSignOutLoading] = useState(false);
+
+  async function handleSignOut() {
+    setSignOutLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      // AppNavigator's onAuthStateChange will automatically show AuthScreen
+    } catch (error) {
+      Alert.alert('Hata', error.message);
+    } finally {
+      setSignOutLoading(false);
+      setShowSignOut(false);
+    }
+  }
 
   // Notification Switch States
   const [dailyReminder, setDailyReminder] = useState(true);
@@ -233,10 +249,14 @@ export default function ProfileScreen() {
                 <Text className="text-base font-bold text-gray-500">Stay</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => setShowSignOut(false)}
+                onPress={handleSignOut}
+                disabled={signOutLoading}
                 className="flex-1 h-14 rounded-2xl items-center justify-center bg-red-100"
+                style={{ opacity: signOutLoading ? 0.6 : 1 }}
               >
-                <Text className="text-base font-black text-red-500">Sign Out</Text>
+                {signOutLoading
+                  ? <ActivityIndicator color="#EF4444" />
+                  : <Text className="text-base font-black text-red-500">Sign Out</Text>}
               </TouchableOpacity>
             </View>
           </Pressable>
