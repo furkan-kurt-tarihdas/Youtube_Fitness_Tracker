@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Home, User } from 'lucide-react-native';
+import { Home, User, Plus } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeStackNavigator from './HomeStackNavigator';
@@ -9,11 +9,13 @@ import ProfileScreen from '../screens/ProfileScreen';
 import AuthScreen from '../screens/AuthScreen';
 import { colors } from '../utils/colors';
 import { supabase } from '../services/supabase';
+import { useAddVideo } from '../context/AddVideoContext';
 
 const Tab = createBottomTabNavigator();
 
 function MainTabs() {
   const insets = useSafeAreaInsets();
+  const { show } = useAddVideo();
 
   return (
     <Tab.Navigator
@@ -47,6 +49,26 @@ function MainTabs() {
           ),
         }}
       />
+
+      <Tab.Screen
+        name="AddVideoTab"
+        component={View} // Dummy component since we use tabBarButton to show modal
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <View style={[styles.iconContainer, styles.unfocusedIconContainer]}>
+              <Plus color="#FFFFFF" size={32} strokeWidth={3} />
+            </View>
+          ),
+          tabBarButton: (props) => (
+            <TouchableOpacity
+              {...props}
+              activeOpacity={0.7}
+              onPress={() => show()}
+            />
+          ),
+        }}
+      />
+
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
@@ -66,12 +88,10 @@ export default function AppNavigator() {
   const [session, setSession] = useState(undefined); // undefined = loading
 
   useEffect(() => {
-    // Mevcut oturumu kontrol et
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
 
-    // Auth durumu değişikliklerini dinle
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
@@ -79,7 +99,6 @@ export default function AppNavigator() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Oturum durumu belirsizken yükleme ekranı göster
   if (session === undefined) {
     return (
       <View style={styles.loadingContainer}>
@@ -88,7 +107,6 @@ export default function AppNavigator() {
     );
   }
 
-  // Session yoksa Auth ekranı, varsa ana uygulama
   return session ? <MainTabs /> : <AuthScreen />;
 }
 

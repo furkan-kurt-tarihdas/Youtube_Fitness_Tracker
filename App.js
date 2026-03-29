@@ -6,6 +6,8 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { useShareIntent } from "expo-share-intent";
 import { addVideo } from "./src/services/db";
+import { AddVideoProvider } from "./src/context/AddVideoContext";
+import AddVideoBottomSheet from "./src/components/AddVideoBottomSheet";
 
 const YOUTUBE_REGEX = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
 
@@ -50,10 +52,13 @@ function ShareIntentHandler() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <ShareIntentHandler />
-        <AppNavigator />
-      </NavigationContainer>
+      <AddVideoProvider>
+        <NavigationContainer>
+          <ShareIntentHandler />
+          <AppNavigator />
+          <AddVideoBottomSheet />
+        </NavigationContainer>
+      </AddVideoProvider>
     </SafeAreaProvider>
   );
 }
