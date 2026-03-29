@@ -5,7 +5,7 @@ import { colors } from '../utils/colors';
 export default function Header({ isEmpty }) {
   return (
     <View className="px-6 pt-4 mt-2">
-      <View className="flex-row items-center justify-between mb-2">
+      <View className="flex-row items-center justify-between mb-0">
         {/* Left: Avatar + Texts */}
         <View className="flex-row items-center flex-1 mr-2">
           <Image
@@ -16,8 +16,8 @@ export default function Header({ isEmpty }) {
             <Text className="text-lg font-bold" style={{ color: colors.text }} numberOfLines={1}>
               Hello, Michelle!
             </Text>
-            <Text 
-              className="text-sm" 
+            <Text
+              className="text-sm"
               style={{ color: '#9CA3AF' }}
               numberOfLines={2}
             >

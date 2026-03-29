@@ -81,7 +81,7 @@ export default function EmptyState() {
           className="text-base font-semibold text-center"
           style={{ color: '#6B7280', lineHeight: 24 }}
         >
-          Your videos will appear here.{'\n'}Start by sharing a video!
+          The videos you've followed will appear here.{'\n'}Start by adding a video!
         </Text>
       </View>
     </View>
