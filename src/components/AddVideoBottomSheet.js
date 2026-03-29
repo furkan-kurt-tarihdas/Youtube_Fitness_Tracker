@@ -2,11 +2,20 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   Modal, Pressable, StyleSheet, ActivityIndicator,
-  Alert, KeyboardAvoidingView, Platform,
+  Alert, KeyboardAvoidingView, Platform, Dimensions,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  Easing,
+} from 'react-native-reanimated';
 import { useAddVideo } from '../context/AddVideoContext';
 import { addVideo } from '../services/db';
 import { colors } from '../utils/colors';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const THEME_COLORS = [
   { hex: '#D8B4E2', label: 'Mor' },
@@ -24,15 +33,41 @@ export default function AddVideoBottomSheet() {
   const [themeColor, setThemeColor] = useState(THEME_COLORS[0].hex);
   const [adding, setAdding] = useState(false);
 
-  // Reset internal state when hidden
+  // Animation values
+  const overlayOpacity = useSharedValue(0);
+  const sheetTranslateY = useSharedValue(SCREEN_HEIGHT);
+
   useEffect(() => {
-    if (!isBottomSheetVisible) {
+    if (isBottomSheetVisible) {
+      // Show animations
+      overlayOpacity.value = withTiming(1, { duration: 300 });
+      sheetTranslateY.value = withSpring(0, {
+        damping: 20,
+        stiffness: 90,
+      });
+    } else {
+      // Hide animations
+      overlayOpacity.value = withTiming(0, { duration: 250 });
+      sheetTranslateY.value = withTiming(SCREEN_HEIGHT, { 
+        duration: 250,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1) 
+      });
+      
+      // Clear inputs
       setYoutubeLink('');
       setVideoTitle('');
       setThemeColor(THEME_COLORS[0].hex);
       setAdding(false);
     }
   }, [isBottomSheetVisible]);
+
+  const animatedOverlayStyle = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
+  }));
+
+  const animatedSheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: sheetTranslateY.value }],
+  }));
 
   async function handleAdd() {
     if (!youtubeLink.trim() || !videoTitle.trim()) {
@@ -43,7 +78,6 @@ export default function AddVideoBottomSheet() {
     try {
       await addVideo(youtubeLink.trim(), videoTitle.trim(), themeColor);
       hide();
-      // Not: HomeScreen useFocusEffect ile veri çektiği için sheet kapanınca otomatik yenilenecek.
     } catch (err) {
       Alert.alert('Hata', err.message);
     } finally {
@@ -55,15 +89,21 @@ export default function AddVideoBottomSheet() {
     <Modal
       visible={isBottomSheetVisible}
       transparent
-      animationType="slide"
+      animationType="none" // Custom animation handled by reanimated
       onRequestClose={hide}
     >
-      <Pressable style={styles.overlay} onPress={hide}>
+      <View style={styles.container}>
+        {/* Fading Backdrop Overlay */}
+        <Animated.View style={[styles.overlay, animatedOverlayStyle]}>
+          <Pressable style={styles.absoluteFull} onPress={hide} />
+        </Animated.View>
+
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
         >
-          <Pressable style={styles.sheet} onPress={() => {}}>
+          {/* Sliding Sheet */}
+          <Animated.View style={[styles.sheet, animatedSheetStyle]}>
             <View style={styles.handle} />
 
             <View style={styles.content}>
@@ -123,18 +163,24 @@ export default function AddVideoBottomSheet() {
                 </TouchableOpacity>
               </View>
             </View>
-          </Pressable>
+          </Animated.View>
         </KeyboardAvoidingView>
-      </Pressable>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(30, 20, 50, 0.45)',
     justifyContent: 'flex-end',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(30,30,50,0.45)', // Slightly adjusted to be more subtle
+  },
+  absoluteFull: {
+    flex: 1,
   },
   keyboardView: {
     width: '100%',
