@@ -59,7 +59,7 @@ export default function VideoDetailScreen() {
         const [c, dates, lb] = await Promise.all([
           fetchCompletionCountForVideo(video.id),
           fetchCompletionsForVideo(video.id),
-          getVideoLeaderboard(video.id),
+          getVideoLeaderboard(video.youtube_id),
         ]);
         setCount(c);
         setCompletedDates(dates);
@@ -92,14 +92,14 @@ export default function VideoDetailScreen() {
 
   const handleFinish = async () => {
     try {
-      await recordCompletion(video.id);
+      await recordCompletion(video);
       const newCount = count + 1;
       setCount(newCount);
       const today = new Date().toISOString().split('T')[0];
       setCompletedDates(ex => [...ex, today]);
 
       // Refresh leaderboard after completing
-      getVideoLeaderboard(video.id).then(setLeaderboard).catch(console.warn);
+      getVideoLeaderboard(video.youtube_id).then(setLeaderboard).catch(console.warn);
     } catch (error) {
       if (error.message.includes('already completed')) {
         // Already done today — silently ignore (button should be labelled accordingly)
