@@ -1,20 +1,71 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image } from 'react-native';
 import { colors } from '../utils/colors';
+import { getUserGlobalStreak } from '../services/db';
+import { supabase } from '../services/supabase';
 
 export default function Header({ isEmpty }) {
+  const [username, setUsername] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [globalStreak, setGlobalStreak] = useState(0);
+  const [streakLoaded, setStreakLoaded] = useState(false);
+
+  useEffect(() => {
+    async function loadUserData() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Username from user_metadata or email prefix
+        const meta = user.user_metadata || {};
+        const name = meta.username || meta.full_name || user.email?.split('@')[0] || 'Athlete';
+        setUsername(name);
+
+        // Avatar from profiles table
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          if (profile.username) setUsername(profile.username);
+          if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
+        }
+
+        // Global streak
+        const streak = await getUserGlobalStreak(user.id);
+        setGlobalStreak(streak);
+      } catch (err) {
+        console.warn('Header load error:', err.message);
+      } finally {
+        setStreakLoaded(true);
+      }
+    }
+    loadUserData();
+  }, []);
+
+  const hasStreak = globalStreak > 0;
+  const streakLabel = streakLoaded
+    ? `${hasStreak ? '🔥' : '💤'} ${globalStreak} Day Streak`
+    : '⏳ Loading...';
+
+  const avatarSource = avatarUrl
+    ? { uri: avatarUrl }
+    : { uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(username || 'A')}&background=D8B4E2&color=3D3D5C&size=128` };
+
   return (
     <View className="px-6 pt-4 mt-2">
       <View className="flex-row items-center justify-between mb-0">
         {/* Left: Avatar + Texts */}
         <View className="flex-row items-center flex-1 mr-2">
           <Image
-            source={{ uri: 'https://i.pravatar.cc/150?img=47' }}
+            source={avatarSource}
             className="w-12 h-12 rounded-full mr-3 bg-gray-200"
           />
           <View className="flex-1">
             <Text className="text-lg font-bold" style={{ color: colors.text }} numberOfLines={1}>
-              Hello, Michelle!
+              Hello, {username || '...'}!
             </Text>
             <Text
               className="text-sm"
@@ -29,10 +80,13 @@ export default function Header({ isEmpty }) {
         {/* Right: Streak Badge */}
         <View
           className="px-3 py-1.5 rounded-xl flex-row items-center"
-          style={{ backgroundColor: colors.secondary }}
+          style={{ backgroundColor: hasStreak ? colors.secondary : '#EFF2F5' }}
         >
-          <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-            {isEmpty ? '💤 0 Day Streak' : '🔥 7 Day Streak'}
+          <Text
+            className="text-sm font-semibold"
+            style={{ color: hasStreak ? colors.text : '#9CA3AF' }}
+          >
+            {streakLabel}
           </Text>
         </View>
       </View>

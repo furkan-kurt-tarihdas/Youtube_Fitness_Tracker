@@ -131,7 +131,7 @@ export async function addVideo(youtubeUrl, titleHint, themeColor) {
   const thumbnailUrl = `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`;
 
   // Fetch real title via oEmbed
-  let title = titleHint || 'YouTube Videosu';
+  let title = titleHint || 'YouTube Video';
   try {
     const res = await fetch(
       `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${youtubeId}&format=json`
@@ -176,7 +176,7 @@ export async function updateVideo(id, newTitle, newColor) {
 }
 
 /**
- * Delete a video and its associated completions (cascade handled by DB FK).
+ * Delete a video (completions cascade via FK).
  */
 export async function deleteVideo(id) {
   const { error } = await supabase
@@ -187,7 +187,108 @@ export async function deleteVideo(id) {
   if (error) throw error;
 }
 
+/**
+ * Calculate the global streak for a user.
+ * Counts consecutive days ending today or yesterday.
+ * Returns 0 if no activity.
+ */
+export async function getUserGlobalStreak(userId) {
+  const { data, error } = await supabase
+    .from('completions')
+    .select('completed_date')
+    .eq('user_id', userId)
+    .order('completed_date', { ascending: false });
+
+  if (error) throw error;
+  if (!data || data.length === 0) return 0;
+
+  // Deduplicate dates
+  const uniqueDates = [...new Set(data.map(r => r.completed_date))].sort().reverse();
+
+  return consecutiveDaysStreak(uniqueDates);
+}
+
+/**
+ * Get the leaderboard for a specific video.
+ * Returns array sorted by per-user streak (desc):
+ * [{ id, username, avatar_url, streak, isCurrentUser }]
+ */
+export async function getVideoLeaderboard(videoId) {
+  const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+  // Fetch all completions for this video, joined with profiles
+  const { data, error } = await supabase
+    .from('completions')
+    .select('user_id, completed_date, profiles(id, username, avatar_url)')
+    .eq('video_id', videoId)
+    .order('completed_date', { ascending: false });
+
+  if (error) throw error;
+  if (!data || data.length === 0) return [];
+
+  // Group completions by user
+  const byUser = {};
+  data.forEach(({ user_id, completed_date, profiles: profile }) => {
+    if (!byUser[user_id]) {
+      byUser[user_id] = {
+        id: user_id,
+        username: profile?.username || 'Anonymous',
+        avatar_url: profile?.avatar_url || null,
+        dates: [],
+      };
+    }
+    byUser[user_id].dates.push(completed_date);
+  });
+
+  // Compute streak per user and rank
+  const leaderboard = Object.values(byUser).map(entry => {
+    const uniqueDates = [...new Set(entry.dates)].sort().reverse();
+    return {
+      id: entry.id,
+      username: entry.username,
+      avatar_url: entry.avatar_url,
+      streak: consecutiveDaysStreak(uniqueDates),
+      isCurrentUser: entry.id === currentUser?.id,
+    };
+  });
+
+  // Sort by streak descending
+  leaderboard.sort((a, b) => b.streak - a.streak);
+
+  return leaderboard;
+}
+
 // ─── Helpers ───────────────────────────────────────────────
+
+/**
+ * Given an array of YYYY-MM-DD strings in descending order (newest first),
+ * compute how many consecutive days there are, starting from today or yesterday.
+ */
+function consecutiveDaysStreak(sortedDatesDesc) {
+  if (!sortedDatesDesc || sortedDatesDesc.length === 0) return 0;
+
+  const toMs = (str) => new Date(str + 'T00:00:00').getTime();
+  const DAY_MS = 24 * 60 * 60 * 1000;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const yesterdayStr = new Date(Date.now() - DAY_MS).toISOString().split('T')[0];
+
+  // Streak must start from today or yesterday
+  const firstDate = sortedDatesDesc[0];
+  if (firstDate !== todayStr && firstDate !== yesterdayStr) return 0;
+
+  let streak = 1;
+  for (let i = 1; i < sortedDatesDesc.length; i++) {
+    const diff = toMs(sortedDatesDesc[i - 1]) - toMs(sortedDatesDesc[i]);
+    if (diff === DAY_MS) {
+      streak++;
+    } else {
+      break; // gap found — streak is over
+    }
+  }
+
+  return streak;
+}
 
 function extractYoutubeId(url) {
   try {

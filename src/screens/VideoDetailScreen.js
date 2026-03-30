@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, StatusBar, Image, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, StatusBar, Image, ActivityIndicator } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
@@ -14,11 +14,11 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { colors } from '../utils/colors';
-import { mockLeaderboard } from '../data/mockData';
 import { 
   fetchCompletionCountForVideo, 
   fetchCompletionsForVideo, 
-  recordCompletion 
+  recordCompletion,
+  getVideoLeaderboard,
 } from '../services/db';
 import Leaderboard from '../components/Leaderboard';
 import StreakCalendar from '../components/StreakCalendar';
@@ -36,22 +36,24 @@ export default function VideoDetailScreen() {
 
   const activeColor = video.theme_color || video.themeColor || colors.primary;
 
-  const [count, setCount] = useState(0);
+  const [count, setCount]               = useState(0);
   const [completedDates, setCompletedDates] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [buttonText, setButtonText] = useState('Loading...');
+  const [loading, setLoading]           = useState(true);
+  const [buttonText, setButtonText]     = useState('Loading...');
+  const [leaderboard, setLeaderboard]   = useState([]);
 
-  // Effect to load initial counts/dates
-  React.useEffect(() => {
+  useEffect(() => {
     async function loadStats() {
       try {
-        const [c, dates] = await Promise.all([
+        const [c, dates, lb] = await Promise.all([
           fetchCompletionCountForVideo(video.id),
-          fetchCompletionsForVideo(video.id)
+          fetchCompletionsForVideo(video.id),
+          getVideoLeaderboard(video.id),
         ]);
         setCount(c);
         setCompletedDates(dates);
         setButtonText(`Complete Day ${c + 1}`);
+        setLeaderboard(lb);
       } catch (err) {
         console.error('Stats load failed:', err);
         setButtonText('Ready?');
@@ -63,71 +65,61 @@ export default function VideoDetailScreen() {
   }, [video.id]);
 
   // Reanimated Shared Values
-  const opacity = useSharedValue(0);
-  const translateX = useSharedValue(150);
-  const translateY = useSharedValue(200);
-  const rotate = useSharedValue(20);
+  const opacity     = useSharedValue(0);
+  const translateX  = useSharedValue(150);
+  const translateY  = useSharedValue(200);
+  const rotate      = useSharedValue(20);
 
-  const mascotStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-      transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-        { rotate: `${rotate.value}deg` },
-      ]
-    };
-  });
+  const mascotStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { rotate: `${rotate.value}deg` },
+    ]
+  }));
 
   const handleFinish = async () => {
-    // 1. Record in DB
     try {
       await recordCompletion(video.id);
-      // Update local state to reflect new completion
       const newCount = count + 1;
       setCount(newCount);
-      // We don't necessarily need to refetch all dates if it's just today 
-      // but let's keep it simple for now or just add today locally.
       const today = new Date().toISOString().split('T')[0];
       setCompletedDates(ex => [...ex, today]);
+
+      // Refresh leaderboard after completing
+      getVideoLeaderboard(video.id).then(setLeaderboard).catch(console.warn);
     } catch (error) {
-      if (error.message.includes('zaten tamamladınız')) {
-        Alert.alert('Tamamlandı', 'Bu videoyu bugün zaten puanladınız! Yarın tekrar bekleriz. 🔥');
+      if (error.message.includes('already completed')) {
+        // Already done today — silently ignore (button should be labelled accordingly)
         return;
       }
-      Alert.alert('Hata', error.message);
+      console.warn('Completion error:', error.message);
       return;
     }
 
-    // 2. Titreşim (Haptics)
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    } catch (error) {
-      console.log('Haptics failed:', error);
+    } catch {
+      // Haptics not available
     }
     
-    // 3. Animasyon Başlat
     opacity.value = withSequence(
       withSpring(1),
       withDelay(2500, withTiming(0, { duration: 500 }))
     );
-
     translateX.value = withSequence(
       withSpring(-20),
       withDelay(2500, withTiming(150, { duration: 500 }))
     );
-
     translateY.value = withSequence(
       withSpring(-20),
       withDelay(2500, withTiming(200, { duration: 500 }))
     );
-
     rotate.value = withSequence(
       withSpring(-5),
       withDelay(2500, withTiming(20, { duration: 500 }, (finished) => {
-        if (finished) {
-          runOnJS(setButtonText)(`Day ${count + 1} Completed! 🎉`);
-        }
+        if (finished) runOnJS(setButtonText)(`Day ${count + 1} Completed! 🎉`);
       }))
     );
   };
@@ -136,7 +128,7 @@ export default function VideoDetailScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       
-      {/* Header Alanı */}
+      {/* Header */}
       <View className="flex-row items-center px-6 py-4 mt-2 mb-2">
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
@@ -149,28 +141,23 @@ export default function VideoDetailScreen() {
         </Text>
       </View>
       
-      {/* İçerik */}
+      {/* Content */}
       <ScrollView 
         contentContainerStyle={{ paddingBottom: 220 }} 
         showsVerticalScrollIndicator={false}
       >
-        <Leaderboard data={mockLeaderboard} />
+        <Leaderboard data={leaderboard} />
         <StreakCalendar 
           themeColor={activeColor} 
           completedDates={completedDates}
         />
       </ScrollView>
 
-      {/* Maskot Animasyon Alanı */}
+      {/* Mascot */}
       <Animated.View 
         style={[
-          {
-            position: 'absolute',
-            bottom: 80,
-            right: -20,
-            zIndex: 10,
-          },
-          mascotStyle
+          { position: 'absolute', bottom: 80, right: -20, zIndex: 10 },
+          mascotStyle,
         ]}
         pointerEvents="none"
       >
@@ -180,7 +167,7 @@ export default function VideoDetailScreen() {
         />
       </Animated.View>
 
-      {/* Sticky Bottom Butonu - Alt tab bar'dan biraz daha yüksekte */}
+      {/* Complete Button */}
       <View className="absolute bottom-28 left-6 right-6 pb-2 bg-transparent" pointerEvents="box-none">
         <TouchableOpacity 
           activeOpacity={0.8}
