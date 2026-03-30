@@ -10,6 +10,7 @@ import AuthScreen from '../screens/AuthScreen';
 import { colors } from '../utils/colors';
 import { supabase } from '../services/supabase';
 import { useAddVideo } from '../context/AddVideoContext';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -42,11 +43,17 @@ function MainTabs() {
         name="Home"
         component={HomeStackNavigator}
         options={{
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.iconContainer, focused ? styles.focusedIconContainer : styles.unfocusedIconContainer]}>
-              <Home color={focused ? colors.text : '#FFFFFF'} size={28} strokeWidth={focused ? 2.5 : 2} />
-            </View>
-          ),
+          tabBarIcon: ({ focused }) => {
+            const { activeHomeTabColor } = useTheme();
+            return (
+              <View style={[
+                styles.iconContainer, 
+                focused ? { backgroundColor: activeHomeTabColor } : styles.unfocusedIconContainer
+              ]}>
+                <Home color={focused ? colors.text : '#FFFFFF'} size={28} strokeWidth={focused ? 2.5 : 2} />
+              </View>
+            );
+          },
         }}
       />
 
@@ -107,7 +114,11 @@ export default function AppNavigator() {
     );
   }
 
-  return session ? <MainTabs /> : <AuthScreen />;
+  return session ? (
+    <ThemeProvider>
+      <MainTabs />
+    </ThemeProvider>
+  ) : <AuthScreen />;
 }
 
 const styles = StyleSheet.create({

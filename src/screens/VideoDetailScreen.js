@@ -22,6 +22,8 @@ import {
 } from '../services/db';
 import Leaderboard from '../components/Leaderboard';
 import StreakCalendar from '../components/StreakCalendar';
+import { useTheme } from '../context/ThemeContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 const mascotImage = require('../../assets/day_completed.png');
 
@@ -41,6 +43,15 @@ export default function VideoDetailScreen() {
   const [loading, setLoading]           = useState(true);
   const [buttonText, setButtonText]     = useState('Loading...');
   const [leaderboard, setLeaderboard]   = useState([]);
+  
+  const { setHomeTabColor, resetHomeTabColor } = useTheme();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      setHomeTabColor(activeColor);
+      return () => resetHomeTabColor();
+    }, [activeColor])
+  );
 
   useEffect(() => {
     async function loadStats() {
@@ -146,7 +157,7 @@ export default function VideoDetailScreen() {
         contentContainerStyle={{ paddingBottom: 220 }} 
         showsVerticalScrollIndicator={false}
       >
-        <Leaderboard data={leaderboard} />
+        <Leaderboard data={leaderboard} themeColor={activeColor} />
         <StreakCalendar 
           themeColor={activeColor} 
           completedDates={completedDates}

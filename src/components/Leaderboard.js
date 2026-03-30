@@ -5,7 +5,9 @@ import { colors } from '../utils/colors';
 const DEFAULT_AVATAR = (username) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(username || 'A')}&background=D8B4E2&color=3D3D5C&size=128`;
 
-export default function Leaderboard({ data }) {
+export default function Leaderboard({ data, themeColor }) {
+  const highlightColor = themeColor || colors.primary;
+  
   if (!data || data.length === 0) {
     return (
       <View className="bg-white rounded-3xl p-5 shadow-sm shadow-gray-200 mb-6 mx-6">
@@ -28,7 +30,7 @@ export default function Leaderboard({ data }) {
         <View
           key={item.id}
           className="flex-row items-center justify-between mb-3 p-3 rounded-2xl"
-          style={{ backgroundColor: item.isCurrentUser ? `${colors.primary}40` : 'transparent' }}
+          style={{ backgroundColor: item.isCurrentUser ? `${highlightColor}40` : 'transparent' }}
         >
           <View className="flex-row items-center flex-1">
             <Text className="text-gray-500 font-overlockBold w-6 text-center mr-2">

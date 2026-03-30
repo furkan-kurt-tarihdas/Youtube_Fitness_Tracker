@@ -44,22 +44,45 @@
           "androidIntentFilters": [
             {
               "action": "android.intent.action.SEND",
-              "category": ["android.intent.category.DEFAULT"],
-              "data": [{ "mimeType": "text/plain" }]
+              "category": [
+                "android.intent.category.DEFAULT"
+              ],
+              "data": [
+                {
+                  "mimeType": "text/plain"
+                }
+              ]
             },
             {
               "action": "android.intent.action.SEND",
-              "category": ["android.intent.category.DEFAULT"],
-              "data": [{ "scheme": "https", "host": "*.youtube.com", "pathPattern": ".*" }]
+              "category": [
+                "android.intent.category.DEFAULT"
+              ],
+              "data": [
+                {
+                  "scheme": "https",
+                  "host": "*.youtube.com",
+                  "pathPattern": ".*"
+                }
+              ]
             },
             {
               "action": "android.intent.action.SEND",
-              "category": ["android.intent.category.DEFAULT"],
-              "data": [{ "scheme": "https", "host": "youtu.be", "pathPattern": ".*" }]
+              "category": [
+                "android.intent.category.DEFAULT"
+              ],
+              "data": [
+                {
+                  "scheme": "https",
+                  "host": "youtu.be",
+                  "pathPattern": ".*"
+                }
+              ]
             }
           ]
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }
