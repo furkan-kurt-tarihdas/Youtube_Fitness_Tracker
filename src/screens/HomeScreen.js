@@ -161,7 +161,7 @@ export default function HomeScreen() {
           ]}
           pointerEvents="none"
         >
-          <Text style={styles.toastText}>{toast.message}</Text>
+          <Text className="font-overlockBold" style={styles.toastText}>{toast.message}</Text>
         </Animated.View>
       )}
 
@@ -176,7 +176,7 @@ export default function HomeScreen() {
         {hasVideos ? (
           <>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Daily Challenge</Text>
+              <Text className="font-overlockBold" style={[styles.sectionTitle, { color: colors.text }]}>Daily Challenge</Text>
             </View>
             {videos.map((video) => (
               <VideoCard
@@ -201,11 +201,12 @@ export default function HomeScreen() {
       >
         <Pressable style={styles.modalOverlay} onPress={closeEditModal}>
           <Pressable style={styles.modalCard} onPress={() => {}}>
-            <Text style={styles.modalTitle}>Edit Video</Text>
-            <Text style={styles.modalSubtitle}>You can change the title or card color.</Text>
+            <Text className="font-overlockBold" style={styles.modalTitle}>Edit Video</Text>
+            <Text className="font-overlock" style={styles.modalSubtitle}>You can change the title or card color.</Text>
 
             {/* Read-only URL field */}
             <TextInput
+              className="font-overlock"
               style={[styles.input, styles.inputDisabled]}
               value={
                 editingVideo?.youtube_id
@@ -217,6 +218,7 @@ export default function HomeScreen() {
 
             {/* Editable title */}
             <TextInput
+              className="font-overlock"
               style={styles.input}
               placeholder="Video Title"
               placeholderTextColor="#C4B8D4"
@@ -225,7 +227,7 @@ export default function HomeScreen() {
             />
 
             {/* Color picker */}
-            <Text style={styles.colorLabel}>Choose card color</Text>
+            <Text className="font-overlockBold" style={styles.colorLabel}>Choose card color</Text>
             <View style={styles.colorRow}>
               {THEME_COLORS.map((c) => (
                 <TouchableOpacity
@@ -249,7 +251,7 @@ export default function HomeScreen() {
               >
                 {deleting
                   ? <ActivityIndicator color="white" size="small" />
-                  : <Text style={styles.deleteBtnText}>🗑️ Delete</Text>}
+                  : <Text className="font-overlockBold" style={styles.deleteBtnText}>🗑️ Delete</Text>}
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -262,7 +264,7 @@ export default function HomeScreen() {
               >
                 {saving
                   ? <ActivityIndicator color="white" size="small" />
-                  : <Text style={styles.saveBtnText}>Save</Text>}
+                  : <Text className="font-overlockBold" style={styles.saveBtnText}>Save</Text>}
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -278,16 +280,16 @@ function ShareIntentInfoCard() {
   return (
     <View style={styles.infoCard}>
       <Text style={styles.infoEmoji}>📱</Text>
-      <Text style={styles.infoTitle}>Share from YouTube!</Text>
-      <Text style={styles.infoBody}>
+      <Text className="font-overlockBold" style={styles.infoTitle}>Share from YouTube!</Text>
+      <Text className="font-overlock" style={styles.infoBody}>
         Open any video in the YouTube app and tap{' '}
-        <Text style={{ fontWeight: '700' }}>Share → Lavender</Text>.
+        <Text className="font-overlockBold" style={{ fontWeight: '700' }}>Share → Lavender</Text>.
         The video will be added to your list automatically.
       </Text>
       <View style={styles.infoDivider} />
-      <Text style={styles.infoHint}>
+      <Text className="font-overlock" style={styles.infoHint}>
         Or tap the{' '}
-        <Text style={{ fontWeight: '700' }}>+</Text>{' '}
+        <Text className="font-overlockBold" style={{ fontWeight: '700' }}>+</Text>{' '}
         button below to add a link manually.
       </Text>
     </View>

@@ -8,6 +8,11 @@ import { useShareIntent } from "expo-share-intent";
 import { addVideo } from "./src/services/db";
 import { AddVideoProvider, useAddVideo } from "./src/context/AddVideoContext";
 import AddVideoBottomSheet from "./src/components/AddVideoBottomSheet";
+import { 
+  useFonts, 
+  Overlock_400Regular, 
+  Overlock_700Bold 
+} from "@expo-google-fonts/overlock";
 
 const YOUTUBE_REGEX = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
 
@@ -48,6 +53,13 @@ function ShareIntentHandler() {
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Overlock_400Regular,
+    Overlock_700Bold,
+  });
+
+  if (!fontsLoaded) return null;
+
   return (
     <SafeAreaProvider>
       <AddVideoProvider>

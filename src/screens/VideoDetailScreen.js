@@ -136,7 +136,7 @@ export default function VideoDetailScreen() {
         >
           <ChevronLeft color={colors.text} size={24} />
         </TouchableOpacity>
-        <Text className="text-xl font-extrabold flex-1" style={{ color: colors.text }} numberOfLines={1}>
+        <Text className="text-xl font-overlockBold flex-1" style={{ color: colors.text }} numberOfLines={1}>
           {video.title}
         </Text>
       </View>
@@ -179,7 +179,7 @@ export default function VideoDetailScreen() {
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text className="text-white text-lg font-black tracking-wider">
+            <Text className="text-white text-lg font-overlockBold tracking-wider">
               {buttonText}
             </Text>
           )}

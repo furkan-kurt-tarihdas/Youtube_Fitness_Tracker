@@ -126,7 +126,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
 
         {/* Page Title */}
-        <Text className="text-2xl font-black px-6 pt-6 pb-4" style={{ color: colors.text }}>
+        <Text className="text-2xl font-overlockBold px-6 pt-6 pb-4" style={{ color: colors.text }}>
           Profile
         </Text>
 
@@ -143,10 +143,10 @@ export default function ProfileScreen() {
               style={{ borderWidth: 4, borderColor: colors.primary }}
             />
           )}
-          <Text className="text-2xl font-extrabold" style={{ color: colors.text }}>
+          <Text className="text-2xl font-overlockBold" style={{ color: colors.text }}>
             {profileUsername || '...'}
           </Text>
-          <Text className="text-sm mt-1" style={{ color: '#9CA3AF' }}>
+          <Text className="text-sm font-overlock mt-1" style={{ color: '#9CA3AF' }}>
             Joined {joinYear || '...'}
           </Text>
         </View>
@@ -163,8 +163,8 @@ export default function ProfileScreen() {
                 <ActivityIndicator color={colors.text} />
               ) : (
                 <>
-                  <Text className="text-2xl font-black mb-1" style={{ color: colors.text }}>{stat.value}</Text>
-                  <Text className="text-xs font-semibold text-center" style={{ color: colors.text, opacity: 0.6 }}>
+                  <Text className="text-2xl font-overlockBold mb-1" style={{ color: colors.text }}>{stat.value}</Text>
+                  <Text className="text-xs font-overlock font-semibold text-center" style={{ color: colors.text, opacity: 0.6 }}>
                     {stat.label}
                   </Text>
                 </>
@@ -193,7 +193,7 @@ export default function ProfileScreen() {
                   >
                     <Icon size={18} color={iconColor} strokeWidth={2.5} />
                   </View>
-                  <Text className="text-base font-semibold" style={{ color: iconColor }}>{item.label}</Text>
+                  <Text className="text-base font-overlockBold font-semibold" style={{ color: iconColor }}>{item.label}</Text>
                 </View>
                 <ChevronRight size={18} color={iconColor} opacity={0.5} />
               </TouchableOpacity>
@@ -206,17 +206,17 @@ export default function ProfileScreen() {
       <Modal visible={showNotifications} transparent animationType="fade" onRequestClose={() => setShowNotifications(false)}>
         <Pressable className="flex-1 bg-black/50 justify-center items-center px-6" onPress={() => setShowNotifications(false)}>
           <Pressable className="w-full rounded-3xl p-6" style={{ backgroundColor: colors.background }} onPress={e => e.stopPropagation()}>
-            <Text className="text-xl font-black mb-6" style={{ color: colors.text }}>Notification Settings</Text>
+            <Text className="text-xl font-overlockBold mb-6" style={{ color: colors.text }}>Notification Settings</Text>
             <View className="flex-row items-center justify-between mb-4 py-3 px-4 bg-white rounded-2xl">
-              <Text className="text-sm font-semibold flex-1 mr-3" style={{ color: colors.text }}>Daily Workout Reminder</Text>
+              <Text className="text-sm font-overlock font-semibold flex-1 mr-3" style={{ color: colors.text }}>Daily Workout Reminder</Text>
               <Switch value={dailyReminder} onValueChange={setDailyReminder} trackColor={{ false: '#D1D5DB', true: colors.primary }} thumbColor="#FFF" />
             </View>
             <View className="flex-row items-center justify-between mb-6 py-3 px-4 bg-white rounded-2xl">
-              <Text className="text-sm font-semibold flex-1 mr-3" style={{ color: colors.text }}>Streak Alerts</Text>
+              <Text className="text-sm font-overlock font-semibold flex-1 mr-3" style={{ color: colors.text }}>Streak Alerts</Text>
               <Switch value={streakAlert} onValueChange={setStreakAlert} trackColor={{ false: '#D1D5DB', true: colors.primary }} thumbColor="#FFF" />
             </View>
             <TouchableOpacity onPress={() => setShowNotifications(false)} className="w-full h-14 rounded-2xl items-center justify-center" style={{ backgroundColor: colors.primary }}>
-              <Text className="text-base font-black" style={{ color: colors.text }}>Done</Text>
+              <Text className="text-base font-overlockBold" style={{ color: colors.text }}>Done</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
@@ -226,10 +226,10 @@ export default function ProfileScreen() {
       <Modal visible={showAccount} transparent animationType="fade" onRequestClose={() => setShowAccount(false)}>
         <Pressable className="flex-1 bg-black/50 justify-center items-center px-6" onPress={() => setShowAccount(false)}>
           <Pressable className="w-full rounded-3xl p-6" style={{ backgroundColor: colors.background }} onPress={e => e.stopPropagation()}>
-            <Text className="text-xl font-black mb-6" style={{ color: colors.text }}>Account Settings</Text>
-            <Text className="text-xs font-semibold mb-2 ml-1" style={{ color: '#9CA3AF' }}>USERNAME</Text>
+            <Text className="text-xl font-overlockBold mb-6" style={{ color: colors.text }}>Account Settings</Text>
+            <Text className="text-xs font-overlock font-semibold mb-2 ml-1" style={{ color: '#9CA3AF' }}>USERNAME</Text>
             <TextInput
-              className="bg-white rounded-2xl px-4 py-4 text-base mb-6"
+              className="bg-white rounded-2xl px-4 py-4 text-base font-overlock mb-6"
               style={{ color: colors.text }}
               placeholder="Your username"
               placeholderTextColor="#9CA3AF"
@@ -237,11 +237,11 @@ export default function ProfileScreen() {
               onChangeText={setEditUsername}
             />
             <TouchableOpacity activeOpacity={0.6} className="mb-6">
-              <Text className="text-sm font-bold text-center text-red-500">Delete My Account</Text>
+              <Text className="text-sm font-overlockBold text-center text-red-500">Delete My Account</Text>
             </TouchableOpacity>
             <View className="flex-row gap-3">
               <TouchableOpacity onPress={() => setShowAccount(false)} className="flex-1 h-14 rounded-2xl items-center justify-center bg-gray-100">
-                <Text className="text-base font-bold text-gray-500">Cancel</Text>
+                <Text className="text-base font-overlockBold text-gray-500">Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleSaveUsername}
@@ -251,7 +251,7 @@ export default function ProfileScreen() {
               >
                 {savingUsername
                   ? <ActivityIndicator color={colors.text} />
-                  : <Text className="text-base font-black" style={{ color: colors.text }}>Save</Text>}
+                  : <Text className="text-base font-overlockBold" style={{ color: colors.text }}>Save</Text>}
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -262,18 +262,18 @@ export default function ProfileScreen() {
       <Modal visible={showSignOut} transparent animationType="fade" onRequestClose={() => setShowSignOut(false)}>
         <Pressable className="flex-1 bg-black/50 justify-center items-center px-6" onPress={() => setShowSignOut(false)}>
           <Pressable className="w-full rounded-3xl p-6" style={{ backgroundColor: colors.background }} onPress={e => e.stopPropagation()}>
-            <Text className="text-xl font-black mb-3 text-center" style={{ color: colors.text }}>Signing Out</Text>
-            <Text className="text-sm text-center mb-8" style={{ color: '#6B7280' }}>
+            <Text className="text-xl font-overlockBold mb-3 text-center" style={{ color: colors.text }}>Signing Out</Text>
+            <Text className="text-sm font-overlock text-center mb-8" style={{ color: '#6B7280' }}>
               Are you sure you want to leave? The cool stuff will be waiting for you! 🏋️
             </Text>
             <View className="flex-row gap-3">
               <TouchableOpacity onPress={() => setShowSignOut(false)} className="flex-1 h-14 rounded-2xl items-center justify-center bg-gray-100">
-                <Text className="text-base font-bold text-gray-500">Stay</Text>
+                <Text className="text-base font-overlockBold text-gray-500">Stay</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleSignOut} disabled={signOutLoading} className="flex-1 h-14 rounded-2xl items-center justify-center bg-red-100" style={{ opacity: signOutLoading ? 0.6 : 1 }}>
                 {signOutLoading
                   ? <ActivityIndicator color="#EF4444" />
-                  : <Text className="text-base font-black text-red-500">Sign Out</Text>}
+                  : <Text className="text-base font-overlockBold text-red-500">Sign Out</Text>}
               </TouchableOpacity>
             </View>
           </Pressable>

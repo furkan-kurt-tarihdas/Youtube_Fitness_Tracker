@@ -10,6 +10,10 @@ module.exports = {
         primary: '#C3B1E1',    // Pastel Purple
         secondary: '#FDFD96',  // Pastel Yellow
         accent: '#A8E6CF',     // Pastel Green
+      },
+      fontFamily: {
+        overlock: ['Overlock_400Regular'],
+        overlockBold: ['Overlock_700Bold'],
       }
     },
   },

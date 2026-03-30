@@ -40,7 +40,7 @@ export default function VideoCard({ video, onComplete, onEditPress }) {
       {/* Info */}
       <View className="flex-1 justify-center px-5 py-3">
         <Text
-          className="text-base font-bold mb-2"
+          className="text-base font-overlockBold mb-2"
           style={{ color: colors.text }}
           numberOfLines={2}
         >
@@ -53,7 +53,7 @@ export default function VideoCard({ video, onComplete, onEditPress }) {
               className="w-2.5 h-2.5 rounded-full mr-2"
               style={{ backgroundColor: video.theme_color || video.themeColor }}
             />
-            <Text className="text-xs font-medium text-gray-500" numberOfLines={1}>
+            <Text className="text-xs font-overlock text-gray-500" numberOfLines={1}>
               {video.youtube_id ? `youtube.com/watch?v=${video.youtube_id}` : 'Tap to watch'}
             </Text>
           </View>

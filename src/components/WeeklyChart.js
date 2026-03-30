@@ -61,7 +61,7 @@ export default function WeeklyChart({ data, isEmpty }) {
                     })
                 )}
               </View>
-              <Text className="text-xs font-semibold text-gray-400">
+              <Text className="text-xs font-overlockBold font-semibold text-gray-400">
                 {item.day}
               </Text>
             </View>
@@ -80,7 +80,7 @@ export default function WeeklyChart({ data, isEmpty }) {
             }}
           >
             <Text
-              className="text-sm font-semibold text-center"
+              className="text-sm font-overlock font-semibold text-center"
               style={{ color: '#9CA3AF', lineHeight: 22 }}
             >
               Add videos and complete challenges to see your daily progress here.
@@ -123,7 +123,7 @@ export default function WeeklyChart({ data, isEmpty }) {
             })}
             {activeFilters.length > 0 && (
               <TouchableOpacity onPress={() => setActiveFilters([])} className="ml-2">
-                <Text className="text-xs font-bold text-gray-400">Clear</Text>
+                <Text className="text-xs font-overlockBold font-bold text-gray-400">Clear</Text>
               </TouchableOpacity>
             )}
           </ScrollView>

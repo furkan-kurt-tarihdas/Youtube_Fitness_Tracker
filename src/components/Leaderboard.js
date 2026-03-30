@@ -9,10 +9,10 @@ export default function Leaderboard({ data }) {
   if (!data || data.length === 0) {
     return (
       <View className="bg-white rounded-3xl p-5 shadow-sm shadow-gray-200 mb-6 mx-6">
-        <Text className="text-lg font-bold mb-2" style={{ color: colors.text }}>
+        <Text className="text-lg font-overlockBold mb-2" style={{ color: colors.text }}>
           Leaderboard
         </Text>
-        <Text className="text-sm text-center py-4" style={{ color: '#9CA3AF' }}>
+        <Text className="text-sm font-overlock text-center py-4" style={{ color: '#9CA3AF' }}>
           No completions yet. Be the first! 🏆
         </Text>
       </View>
@@ -21,7 +21,7 @@ export default function Leaderboard({ data }) {
 
   return (
     <View className="bg-white rounded-3xl p-5 shadow-sm shadow-gray-200 mb-6 mx-6">
-      <Text className="text-lg font-bold mb-4" style={{ color: colors.text }}>
+      <Text className="text-lg font-overlockBold mb-4" style={{ color: colors.text }}>
         Leaderboard
       </Text>
       {data.map((item, index) => (
@@ -31,7 +31,7 @@ export default function Leaderboard({ data }) {
           style={{ backgroundColor: item.isCurrentUser ? `${colors.primary}40` : 'transparent' }}
         >
           <View className="flex-row items-center flex-1">
-            <Text className="text-gray-500 font-bold w-6 text-center mr-2">
+            <Text className="text-gray-500 font-overlockBold w-6 text-center mr-2">
               {index + 1}
             </Text>
             <Image
@@ -39,11 +39,10 @@ export default function Leaderboard({ data }) {
               className="w-10 h-10 rounded-full mr-3 bg-gray-200"
             />
             <Text
-              className="text-base flex-1"
+              className="text-base flex-1 font-overlockBold"
               numberOfLines={1}
               style={{
                 color: colors.text,
-                fontWeight: item.isCurrentUser ? '800' : '600',
               }}
             >
               {item.username}
@@ -51,7 +50,7 @@ export default function Leaderboard({ data }) {
             </Text>
           </View>
           <View className="px-3 py-1 rounded-full bg-black/5 ml-2">
-            <Text className="text-xs font-extrabold" style={{ color: colors.text }}>
+            <Text className="text-xs font-overlockBold" style={{ color: colors.text }}>
               {item.streak}-day streak
             </Text>
           </View>

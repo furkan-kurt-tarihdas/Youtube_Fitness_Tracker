@@ -121,10 +121,11 @@ export default function AddVideoBottomSheet() {
             <View style={styles.handle} />
 
             <View style={styles.content}>
-              <Text style={styles.title}>Add Video</Text>
-              <Text style={styles.subtitle}>Paste a YouTube link and give it a title.</Text>
+              <Text className="font-overlockBold" style={styles.title}>Add Video</Text>
+              <Text className="font-overlock" style={styles.subtitle}>Paste a YouTube link and give it a title.</Text>
 
               <TextInput
+                className="font-overlock"
                 style={styles.input}
                 placeholder="YouTube URL"
                 placeholderTextColor="#C4B8D4"
@@ -134,14 +135,15 @@ export default function AddVideoBottomSheet() {
                 autoCorrect={false}
               />
               <TextInput
+                className="font-overlock"
                 style={styles.input}
-                placeholder="Video Başlığı"
+                placeholder="Video Title"
                 placeholderTextColor="#C4B8D4"
                 value={videoTitle}
                 onChangeText={setVideoTitle}
               />
 
-              <Text style={styles.colorLabel}>Choose Card Color</Text>
+              <Text className="font-overlockBold" style={styles.colorLabel}>Choose Card Color</Text>
               <View style={styles.colorRow}>
                 {THEME_COLORS.map((c) => (
                   <TouchableOpacity
@@ -161,7 +163,7 @@ export default function AddVideoBottomSheet() {
                   style={[styles.btn, styles.cancelBtn]}
                   onPress={hide}
                 >
-                  <Text style={styles.cancelText}>Cancel</Text>
+                  <Text className="font-overlockBold" style={styles.cancelText}>Cancel</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -172,7 +174,7 @@ export default function AddVideoBottomSheet() {
                   {adding ? (
                     <ActivityIndicator color="white" size="small" />
                   ) : (
-                    <Text style={styles.addText}>Add</Text>
+                    <Text className="font-overlockBold" style={styles.addText}>Add</Text>
                   )}
                 </TouchableOpacity>
               </View>
