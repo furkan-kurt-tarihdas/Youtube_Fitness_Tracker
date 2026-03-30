@@ -1,54 +1,51 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, Image } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../utils/colors';
 import { getUserGlobalStreak } from '../services/db';
 import { supabase } from '../services/supabase';
 
 export default function Header({ isEmpty }) {
-  const [username, setUsername] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [username, setUsername]       = useState('');
+  const [avatarUrl, setAvatarUrl]     = useState(null);
   const [globalStreak, setGlobalStreak] = useState(0);
-  const [streakLoaded, setStreakLoaded] = useState(false);
+  const [loaded, setLoaded]           = useState(false);
 
-  useEffect(() => {
-    async function loadUserData() {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+  // Refresh every time HomeScreen is focused (e.g. after completing a video)
+  useFocusEffect(
+    useCallback(() => {
+      async function loadUserData() {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
 
-        // Username from user_metadata or email prefix
-        const meta = user.user_metadata || {};
-        const name = meta.username || meta.full_name || user.email?.split('@')[0] || 'Athlete';
-        setUsername(name);
+          const meta = user.user_metadata || {};
+          const fallbackName = meta.username || meta.full_name || user.email?.split('@')[0] || 'Athlete';
+          setUsername(fallbackName);
 
-        // Avatar from profiles table
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username, avatar_url')
-          .eq('id', user.id)
-          .single();
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', user.id)
+            .single();
 
-        if (profile) {
-          if (profile.username) setUsername(profile.username);
-          if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
+          if (profile?.username) setUsername(profile.username);
+          if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
+
+          const streak = await getUserGlobalStreak(user.id);
+          setGlobalStreak(streak);
+        } catch (err) {
+          console.warn('Header load error:', err.message);
+        } finally {
+          setLoaded(true);
         }
-
-        // Global streak
-        const streak = await getUserGlobalStreak(user.id);
-        setGlobalStreak(streak);
-      } catch (err) {
-        console.warn('Header load error:', err.message);
-      } finally {
-        setStreakLoaded(true);
       }
-    }
-    loadUserData();
-  }, []);
+      loadUserData();
+    }, [])
+  );
 
   const hasStreak = globalStreak > 0;
-  const streakLabel = streakLoaded
-    ? `${hasStreak ? '🔥' : '💤'} ${globalStreak} Day Streak`
-    : '⏳ Loading...';
+  const streakLabel = !loaded ? '⏳' : `${hasStreak ? '🔥' : '💤'} ${globalStreak} Day Streak`;
 
   const avatarSource = avatarUrl
     ? { uri: avatarUrl }
@@ -67,11 +64,7 @@ export default function Header({ isEmpty }) {
             <Text className="text-lg font-bold" style={{ color: colors.text }} numberOfLines={1}>
               Hello, {username || '...'}!
             </Text>
-            <Text
-              className="text-sm"
-              style={{ color: '#9CA3AF' }}
-              numberOfLines={2}
-            >
+            <Text className="text-sm" style={{ color: '#9CA3AF' }} numberOfLines={2}>
               {isEmpty ? 'Add a video to get started!' : 'Ready to track your habits today?'}
             </Text>
           </View>

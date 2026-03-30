@@ -1,92 +1,179 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   View, Text, Image, ScrollView, TouchableOpacity, SafeAreaView, 
-  StatusBar, Modal, Switch, TextInput, Pressable, ActivityIndicator, Alert
+  StatusBar, Modal, Switch, TextInput, Pressable, ActivityIndicator
 } from 'react-native';
 import { Bell, User, LogOut, ChevronRight } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../utils/colors';
 import { supabase } from '../services/supabase';
-
-const STATS = [
-  { value: '12', label: 'Total Videos', bg: colors.secondary },
-  { value: '7 👑', label: 'Best Streak', bg: colors.accent },
-  { value: '5 🔥', label: 'Current Streak', bg: colors.secondary },
-];
+import { getUserGlobalStreak, fetchVideos } from '../services/db';
 
 export default function ProfileScreen() {
+  // User data
+  const [profileUsername, setProfileUsername] = useState('');
+  const [avatarUrl, setAvatarUrl]             = useState(null);
+  const [joinYear, setJoinYear]               = useState('');
+  const [totalVideos, setTotalVideos]         = useState(0);
+  const [currentStreak, setCurrentStreak]     = useState(0);
+  const [dataLoading, setDataLoading]         = useState(true);
+
   // Modal States
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showAccount, setShowAccount] = useState(false);
-  const [showSignOut, setShowSignOut] = useState(false);
-  const [signOutLoading, setSignOutLoading] = useState(false);
+  const [showAccount, setShowAccount]             = useState(false);
+  const [showSignOut, setShowSignOut]             = useState(false);
+  const [signOutLoading, setSignOutLoading]       = useState(false);
+  const [dailyReminder, setDailyReminder]         = useState(true);
+  const [streakAlert, setStreakAlert]             = useState(true);
+  const [editUsername, setEditUsername]           = useState('');
+  const [savingUsername, setSavingUsername]       = useState(false);
+
+  // Refresh data every time the screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      async function loadProfile() {
+        setDataLoading(true);
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          // Join year from user metadata
+          const created = user.created_at ? new Date(user.created_at).getFullYear() : new Date().getFullYear();
+          setJoinYear(created);
+
+          // Profile table
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', user.id)
+            .single();
+
+          const name = profile?.username
+            || user.user_metadata?.username
+            || user.user_metadata?.full_name
+            || user.email?.split('@')[0]
+            || 'Athlete';
+
+          setProfileUsername(name);
+          setAvatarUrl(profile?.avatar_url || null);
+          setEditUsername(name);
+
+          // Total videos + current streak (parallel)
+          const [videos, streak] = await Promise.all([
+            fetchVideos(),
+            getUserGlobalStreak(user.id),
+          ]);
+          setTotalVideos(videos.length);
+          setCurrentStreak(streak);
+        } catch (err) {
+          console.warn('Profile load error:', err.message);
+        } finally {
+          setDataLoading(false);
+        }
+      }
+      loadProfile();
+    }, [])
+  );
+
+  async function handleSaveUsername() {
+    if (!editUsername.trim()) return;
+    setSavingUsername(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase
+        .from('profiles')
+        .update({ username: editUsername.trim() })
+        .eq('id', user.id);
+      setProfileUsername(editUsername.trim());
+      setShowAccount(false);
+    } catch (err) {
+      console.warn('Save username error:', err.message);
+    } finally {
+      setSavingUsername(false);
+    }
+  }
 
   async function handleSignOut() {
     setSignOutLoading(true);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      // AppNavigator's onAuthStateChange will automatically show AuthScreen
-    } catch (error) {
-      Alert.alert('Hata', error.message);
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('Sign out error:', err.message);
     } finally {
       setSignOutLoading(false);
       setShowSignOut(false);
     }
   }
 
-  // Notification Switch States
-  const [dailyReminder, setDailyReminder] = useState(true);
-  const [streakAlert, setStreakAlert] = useState(true);
-
-  // Account Input State
-  const [username, setUsername] = useState('');
+  const STATS = [
+    { value: String(totalVideos), label: 'Total Videos', bg: colors.secondary },
+    { value: `${currentStreak} 🔥`, label: 'Current Streak', bg: colors.accent },
+  ];
 
   const MENU_ITEMS = [
-    { icon: Bell, label: 'Notifications', danger: false, onPress: () => setShowNotifications(true) },
-    { icon: User, label: 'Account Settings', danger: false, onPress: () => setShowAccount(true) },
-    { icon: LogOut, label: 'Sign Out', danger: true, onPress: () => setShowSignOut(true) },
+    { icon: Bell,    label: 'Notifications',    danger: false, onPress: () => setShowNotifications(true) },
+    { icon: User,    label: 'Account Settings', danger: false, onPress: () => setShowAccount(true) },
+    { icon: LogOut,  label: 'Sign Out',          danger: true,  onPress: () => setShowSignOut(true) },
   ];
+
+  const avatarSource = avatarUrl
+    ? { uri: avatarUrl }
+    : { uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(profileUsername || 'A')}&background=D8B4E2&color=3D3D5C&size=256` };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
 
-        {/* ─── Sayfa Başlığı ─── */}
+        {/* Page Title */}
         <Text className="text-2xl font-black px-6 pt-6 pb-4" style={{ color: colors.text }}>
           Profile
         </Text>
 
-        {/* ─── Kullanıcı Header'ı ─── */}
+        {/* User Header */}
         <View className="items-center mb-8 px-6">
-          <Image
-            source={{ uri: 'https://i.pravatar.cc/300?u=michelle' }}
-            className="w-28 h-28 rounded-full bg-gray-200 mb-4"
-            style={{ borderWidth: 4, borderColor: colors.primary }}
-          />
-          <Text className="text-2xl font-extrabold" style={{ color: colors.text }}>Michelle</Text>
+          {dataLoading ? (
+            <View className="w-28 h-28 rounded-full bg-gray-200 mb-4 items-center justify-center">
+              <ActivityIndicator color={colors.primary} />
+            </View>
+          ) : (
+            <Image
+              source={avatarSource}
+              className="w-28 h-28 rounded-full bg-gray-200 mb-4"
+              style={{ borderWidth: 4, borderColor: colors.primary }}
+            />
+          )}
+          <Text className="text-2xl font-extrabold" style={{ color: colors.text }}>
+            {profileUsername || '...'}
+          </Text>
           <Text className="text-sm mt-1" style={{ color: '#9CA3AF' }}>
-            Premium Member · Joined 2026
+            Joined {joinYear || '...'}
           </Text>
         </View>
 
-        {/* ─── İstatistik Kartları ─── */}
-        <View className="flex-row justify-between mx-6 mb-8">
+        {/* Stats */}
+        <View className="flex-row justify-center mx-6 mb-8 gap-3">
           {STATS.map((stat, i) => (
             <View
               key={i}
               className="flex-1 items-center justify-center py-5 rounded-2xl"
-              style={{ backgroundColor: stat.bg, marginHorizontal: i === 1 ? 10 : 0 }}
+              style={{ backgroundColor: stat.bg }}
             >
-              <Text className="text-2xl font-black mb-1" style={{ color: colors.text }}>{stat.value}</Text>
-              <Text className="text-xs font-semibold text-center" style={{ color: colors.text, opacity: 0.6 }}>
-                {stat.label}
-              </Text>
+              {dataLoading ? (
+                <ActivityIndicator color={colors.text} />
+              ) : (
+                <>
+                  <Text className="text-2xl font-black mb-1" style={{ color: colors.text }}>{stat.value}</Text>
+                  <Text className="text-xs font-semibold text-center" style={{ color: colors.text, opacity: 0.6 }}>
+                    {stat.label}
+                  </Text>
+                </>
+              )}
             </View>
           ))}
         </View>
 
-        {/* ─── Ayarlar Menüsü ─── */}
+        {/* Menu */}
         <View className="mx-6 bg-white rounded-3xl overflow-hidden shadow-sm shadow-gray-200">
           {MENU_ITEMS.map((item, i) => {
             const Icon = item.icon;
@@ -115,145 +202,75 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
 
-      {/* ═══════════════════════════════════════
-          MODAL 1: Bildirim Ayarları
-      ════════════════════════════════════════ */}
+      {/* Modal: Notifications */}
       <Modal visible={showNotifications} transparent animationType="fade" onRequestClose={() => setShowNotifications(false)}>
-        <Pressable 
-          className="flex-1 bg-black/50 justify-center items-center px-6"
-          onPress={() => setShowNotifications(false)}
-        >
-          <Pressable 
-            className="w-full rounded-3xl p-6"
-            style={{ backgroundColor: colors.background }}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <Text className="text-xl font-black mb-6" style={{ color: colors.text }}>
-              Notification Settings
-            </Text>
-
-            {/* Günlük Hatırlatıcı */}
+        <Pressable className="flex-1 bg-black/50 justify-center items-center px-6" onPress={() => setShowNotifications(false)}>
+          <Pressable className="w-full rounded-3xl p-6" style={{ backgroundColor: colors.background }} onPress={e => e.stopPropagation()}>
+            <Text className="text-xl font-black mb-6" style={{ color: colors.text }}>Notification Settings</Text>
             <View className="flex-row items-center justify-between mb-4 py-3 px-4 bg-white rounded-2xl">
-              <Text className="text-sm font-semibold flex-1 mr-3" style={{ color: colors.text }}>
-                Daily Workout Reminder
-              </Text>
-              <Switch
-                value={dailyReminder}
-                onValueChange={setDailyReminder}
-                trackColor={{ false: '#D1D5DB', true: colors.primary }}
-                thumbColor="#FFFFFF"
-              />
+              <Text className="text-sm font-semibold flex-1 mr-3" style={{ color: colors.text }}>Daily Workout Reminder</Text>
+              <Switch value={dailyReminder} onValueChange={setDailyReminder} trackColor={{ false: '#D1D5DB', true: colors.primary }} thumbColor="#FFF" />
             </View>
-
-            {/* Streak Uyarıları */}
             <View className="flex-row items-center justify-between mb-6 py-3 px-4 bg-white rounded-2xl">
-              <Text className="text-sm font-semibold flex-1 mr-3" style={{ color: colors.text }}>
-                Streak Alerts
-              </Text>
-              <Switch
-                value={streakAlert}
-                onValueChange={setStreakAlert}
-                trackColor={{ false: '#D1D5DB', true: colors.primary }}
-                thumbColor="#FFFFFF"
-              />
+              <Text className="text-sm font-semibold flex-1 mr-3" style={{ color: colors.text }}>Streak Alerts</Text>
+              <Switch value={streakAlert} onValueChange={setStreakAlert} trackColor={{ false: '#D1D5DB', true: colors.primary }} thumbColor="#FFF" />
             </View>
-
-            <TouchableOpacity
-              onPress={() => setShowNotifications(false)}
-              className="w-full h-14 rounded-2xl items-center justify-center"
-              style={{ backgroundColor: colors.primary }}
-            >
+            <TouchableOpacity onPress={() => setShowNotifications(false)} className="w-full h-14 rounded-2xl items-center justify-center" style={{ backgroundColor: colors.primary }}>
               <Text className="text-base font-black" style={{ color: colors.text }}>Done</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
       </Modal>
 
-      {/* ═══════════════════════════════════════
-          MODAL 2: Hesap Ayarları
-      ════════════════════════════════════════ */}
+      {/* Modal: Account Settings */}
       <Modal visible={showAccount} transparent animationType="fade" onRequestClose={() => setShowAccount(false)}>
-        <Pressable 
-          className="flex-1 bg-black/50 justify-center items-center px-6"
-          onPress={() => setShowAccount(false)}
-        >
-          <Pressable 
-            className="w-full rounded-3xl p-6"
-            style={{ backgroundColor: colors.background }}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <Text className="text-xl font-black mb-6" style={{ color: colors.text }}>
-              Account Settings
-            </Text>
-
-            <Text className="text-xs font-semibold mb-2 ml-1" style={{ color: '#9CA3AF' }}>
-              USERNAME
-            </Text>
+        <Pressable className="flex-1 bg-black/50 justify-center items-center px-6" onPress={() => setShowAccount(false)}>
+          <Pressable className="w-full rounded-3xl p-6" style={{ backgroundColor: colors.background }} onPress={e => e.stopPropagation()}>
+            <Text className="text-xl font-black mb-6" style={{ color: colors.text }}>Account Settings</Text>
+            <Text className="text-xs font-semibold mb-2 ml-1" style={{ color: '#9CA3AF' }}>USERNAME</Text>
             <TextInput
               className="bg-white rounded-2xl px-4 py-4 text-base mb-6"
               style={{ color: colors.text }}
-              placeholder="Michelle"
+              placeholder="Your username"
               placeholderTextColor="#9CA3AF"
-              value={username}
-              onChangeText={setUsername}
+              value={editUsername}
+              onChangeText={setEditUsername}
             />
-
             <TouchableOpacity activeOpacity={0.6} className="mb-6">
               <Text className="text-sm font-bold text-center text-red-500">Delete My Account</Text>
             </TouchableOpacity>
-
             <View className="flex-row gap-3">
-              <TouchableOpacity
-                onPress={() => setShowAccount(false)}
-                className="flex-1 h-14 rounded-2xl items-center justify-center bg-gray-100"
-              >
+              <TouchableOpacity onPress={() => setShowAccount(false)} className="flex-1 h-14 rounded-2xl items-center justify-center bg-gray-100">
                 <Text className="text-base font-bold text-gray-500">Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => setShowAccount(false)}
+                onPress={handleSaveUsername}
+                disabled={savingUsername}
                 className="flex-1 h-14 rounded-2xl items-center justify-center"
-                style={{ backgroundColor: colors.primary }}
+                style={{ backgroundColor: colors.primary, opacity: savingUsername ? 0.6 : 1 }}
               >
-                <Text className="text-base font-black" style={{ color: colors.text }}>Save</Text>
+                {savingUsername
+                  ? <ActivityIndicator color={colors.text} />
+                  : <Text className="text-base font-black" style={{ color: colors.text }}>Save</Text>}
               </TouchableOpacity>
             </View>
           </Pressable>
         </Pressable>
       </Modal>
 
-      {/* ═══════════════════════════════════════
-          MODAL 3: Çıkış Yap
-      ════════════════════════════════════════ */}
+      {/* Modal: Sign Out */}
       <Modal visible={showSignOut} transparent animationType="fade" onRequestClose={() => setShowSignOut(false)}>
-        <Pressable 
-          className="flex-1 bg-black/50 justify-center items-center px-6"
-          onPress={() => setShowSignOut(false)}
-        >
-          <Pressable 
-            className="w-full rounded-3xl p-6"
-            style={{ backgroundColor: colors.background }}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <Text className="text-xl font-black mb-3 text-center" style={{ color: colors.text }}>
-              Signing Out
-            </Text>
+        <Pressable className="flex-1 bg-black/50 justify-center items-center px-6" onPress={() => setShowSignOut(false)}>
+          <Pressable className="w-full rounded-3xl p-6" style={{ backgroundColor: colors.background }} onPress={e => e.stopPropagation()}>
+            <Text className="text-xl font-black mb-3 text-center" style={{ color: colors.text }}>Signing Out</Text>
             <Text className="text-sm text-center mb-8" style={{ color: '#6B7280' }}>
               Are you sure you want to leave? The cool stuff will be waiting for you! 🏋️
             </Text>
-
             <View className="flex-row gap-3">
-              <TouchableOpacity
-                onPress={() => setShowSignOut(false)}
-                className="flex-1 h-14 rounded-2xl items-center justify-center bg-gray-100"
-              >
+              <TouchableOpacity onPress={() => setShowSignOut(false)} className="flex-1 h-14 rounded-2xl items-center justify-center bg-gray-100">
                 <Text className="text-base font-bold text-gray-500">Stay</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleSignOut}
-                disabled={signOutLoading}
-                className="flex-1 h-14 rounded-2xl items-center justify-center bg-red-100"
-                style={{ opacity: signOutLoading ? 0.6 : 1 }}
-              >
+              <TouchableOpacity onPress={handleSignOut} disabled={signOutLoading} className="flex-1 h-14 rounded-2xl items-center justify-center bg-red-100" style={{ opacity: signOutLoading ? 0.6 : 1 }}>
                 {signOutLoading
                   ? <ActivityIndicator color="#EF4444" />
                   : <Text className="text-base font-black text-red-500">Sign Out</Text>}
