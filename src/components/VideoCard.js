@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Play, Pencil } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors } from '../utils/colors';
@@ -13,11 +14,16 @@ export default function VideoCard({ video, onComplete, onEditPress }) {
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={() => navigation.navigate('VideoDetailScreen', { video })}
-      className="flex-row bg-white rounded-3xl overflow-hidden mb-4 mx-6 shadow-sm shadow-gray-200"
+      className="mb-4 mx-6 shadow-sm shadow-gray-200"
       style={{ height: 110 }}
     >
-      {/* Left color accent */}
-      <View style={{ width: 8, backgroundColor: video.theme_color || video.themeColor }} />
+      <BlurView
+        intensity={40}
+        tint="light"
+        className="flex-row rounded-3xl overflow-hidden w-full h-full"
+      >
+        {/* Left color accent */}
+        <View style={{ width: 8, backgroundColor: video.theme_color || video.themeColor }} />
 
       {/* Thumbnail */}
       <View className="relative w-32 h-full">
@@ -73,6 +79,7 @@ export default function VideoCard({ video, onComplete, onEditPress }) {
           )}
         </View>
       </View>
+      </BlurView>
     </TouchableOpacity>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, Image } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../utils/colors';
 import { getUserGlobalStreak } from '../services/db';
@@ -53,7 +54,11 @@ export default function Header({ isEmpty }) {
 
   return (
     <View className="px-6 pt-4 mt-2">
-      <View className="flex-row items-center justify-between mb-0">
+      <BlurView 
+        intensity={40}
+        tint="light"
+        className="flex-row items-center justify-between px-4 py-3 rounded-2xl overflow-hidden"
+      >
         {/* Left: Avatar + Texts */}
         <View className="flex-row items-center flex-1 mr-2">
           <Image
@@ -82,7 +87,7 @@ export default function Header({ isEmpty }) {
             {streakLabel}
           </Text>
         </View>
-      </View>
+      </BlurView>
     </View>
   );
 }

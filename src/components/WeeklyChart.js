@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { colors } from '../utils/colors';
 
 export default function WeeklyChart({ data, isEmpty }) {
@@ -22,11 +23,16 @@ export default function WeeklyChart({ data, isEmpty }) {
   };
 
   return (
-    <View className="mt-0 mb-2">
+    <View className="mt-0 mb-2 px-6">
       {/* Grafiğin Kendisi — empty ise overlay göster */}
-      <View style={{ position: 'relative' }}>
+      <BlurView
+        intensity={40}
+        tint="light"
+        className="rounded-2xl overflow-hidden pt-4 pb-2"
+        style={{ position: 'relative' }}
+      >
         <View
-          className="flex-row justify-between items-end px-8 py-0 h-48"
+          className="flex-row justify-between items-end px-4 py-0 h-48"
           style={{ opacity: isEmpty ? 0.25 : 1 }}
         >
           {data.map((item, index) => (
@@ -61,7 +67,7 @@ export default function WeeklyChart({ data, isEmpty }) {
                     })
                 )}
               </View>
-              <Text className="text-xs font-overlockBold font-semibold text-gray-400">
+              <Text className="text-xs font-overlockBold font-semibold text-gray-600">
                 {item.day}
               </Text>
             </View>
@@ -87,7 +93,7 @@ export default function WeeklyChart({ data, isEmpty }) {
             </Text>
           </View>
         )}
-      </View>
+      </BlurView>
 
       {/* Renk Filtreleri — empty değilse göster */}
       {!isEmpty && (

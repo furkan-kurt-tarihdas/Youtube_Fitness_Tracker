@@ -3,6 +3,7 @@ import {
   SafeAreaView, ScrollView, View, Text, StatusBar,
   TextInput, TouchableOpacity, Modal, Pressable,
   StyleSheet, ActivityIndicator, Animated, AppState,
+  ImageBackground
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../utils/colors';
@@ -20,10 +21,12 @@ const THEME_COLORS = [
   { hex: '#B4D4E7', label: 'Mavi' },
 ];
 
+const backgroundImage = require('../../assets/bg_9.jpg');
+
 export default function HomeScreen() {
-  const [videos, setVideos]         = useState([]);
+  const [videos, setVideos] = useState([]);
   const [weeklyData, setWeeklyData] = useState([]);
-  const [loading, setLoading]       = useState(true);
+  const [loading, setLoading] = useState(true);
 
   // Toast
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
@@ -32,11 +35,11 @@ export default function HomeScreen() {
 
   // Edit modal state
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [editingVideo, setEditingVideo]             = useState(null);
-  const [editTitle, setEditTitle]                   = useState('');
-  const [editColor, setEditColor]                   = useState('');
-  const [saving, setSaving]                         = useState(false);
-  const [deleting, setDeleting]                     = useState(false);
+  const [editingVideo, setEditingVideo] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editColor, setEditColor] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Register loadData as the refresh callback for AddVideoBottomSheet
   const { registerOnVideoAdded } = useAddVideo();
@@ -75,13 +78,13 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       loadData();
-      
+
       const subscription = AppState.addEventListener('change', (nextAppState) => {
         if (nextAppState === 'active') {
           loadData();
         }
       });
-      
+
       return () => {
         subscription.remove();
       };
@@ -148,129 +151,135 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+    <ImageBackground
+      source={backgroundImage}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-      {/* Toast Notification — above nav bar */}
-      {toast.visible && (
-        <Animated.View
-          style={[
-            styles.toast,
-            toast.type === 'error' ? styles.toastError : styles.toastSuccess,
-            { opacity: toastAnim, transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] },
-          ]}
-          pointerEvents="none"
-        >
-          <Text className="font-overlockBold" style={styles.toastText}>{toast.message}</Text>
-        </Animated.View>
-      )}
-
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 140 }}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Header isEmpty={!hasVideos} />
-        <WeeklyChart data={weeklyData} isEmpty={!hasVideos} />
-
-        {hasVideos ? (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text className="font-overlockBold" style={[styles.sectionTitle, { color: colors.text }]}>Daily Challenge</Text>
-            </View>
-            {videos.map((video) => (
-              <VideoCard
-                key={video.id}
-                video={video}
-                onComplete={loadData}
-                onEditPress={openEditModal}
-              />
-            ))}
-          </>
-        ) : (
-          <ShareIntentInfoCard />
+        {/* Toast Notification — above nav bar */}
+        {toast.visible && (
+          <Animated.View
+            style={[
+              styles.toast,
+              toast.type === 'error' ? styles.toastError : styles.toastSuccess,
+              { opacity: toastAnim, transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] },
+            ]}
+            pointerEvents="none"
+          >
+            <Text className="font-overlockBold" style={styles.toastText}>{toast.message}</Text>
+          </Animated.View>
         )}
-      </ScrollView>
 
-      {/* Edit Modal */}
-      <Modal
-        visible={isEditModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeEditModal}
-      >
-        <Pressable style={styles.modalOverlay} onPress={closeEditModal}>
-          <Pressable style={styles.modalCard} onPress={() => {}}>
-            <Text className="font-overlockBold" style={styles.modalTitle}>Edit Video</Text>
-            <Text className="font-overlock" style={styles.modalSubtitle}>You can change the title or card color.</Text>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 140 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Header isEmpty={!hasVideos} />
+          <WeeklyChart data={weeklyData} isEmpty={!hasVideos} />
 
-            {/* Read-only URL field */}
-            <TextInput
-              className="font-overlock"
-              style={[styles.input, styles.inputDisabled]}
-              value={
-                editingVideo?.youtube_id
-                  ? `youtube.com/watch?v=${editingVideo.youtube_id}`
-                  : ''
-              }
-              editable={false}
-            />
-
-            {/* Editable title */}
-            <TextInput
-              className="font-overlock"
-              style={styles.input}
-              placeholder="Video Title"
-              placeholderTextColor="#C4B8D4"
-              value={editTitle}
-              onChangeText={setEditTitle}
-            />
-
-            {/* Color picker */}
-            <Text className="font-overlockBold" style={styles.colorLabel}>Choose card color</Text>
-            <View style={styles.colorRow}>
-              {THEME_COLORS.map((c) => (
-                <TouchableOpacity
-                  key={c.hex}
-                  onPress={() => setEditColor(c.hex)}
-                  style={[
-                    styles.colorDot,
-                    { backgroundColor: c.hex },
-                    editColor === c.hex && styles.colorDotSelected,
-                  ]}
+          {hasVideos ? (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text className="font-overlockBold" style={[styles.sectionTitle, { color: colors.text }]}>Daily Challenge</Text>
+              </View>
+              {videos.map((video) => (
+                <VideoCard
+                  key={video.id}
+                  video={video}
+                  onComplete={loadData}
+                  onEditPress={openEditModal}
                 />
               ))}
-            </View>
+            </>
+          ) : (
+            <ShareIntentInfoCard />
+          )}
+        </ScrollView>
 
-            {/* Sil / Kaydet */}
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.deleteBtn, deleting && styles.btnDisabled]}
-                onPress={handleDelete}
-                disabled={deleting || saving}
-              >
-                {deleting
-                  ? <ActivityIndicator color="white" size="small" />
-                  : <Text className="font-overlockBold" style={styles.deleteBtnText}>🗑️ Delete</Text>}
-              </TouchableOpacity>
+        {/* Edit Modal */}
+        <Modal
+          visible={isEditModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={closeEditModal}
+        >
+          <Pressable style={styles.modalOverlay} onPress={closeEditModal}>
+            <Pressable style={styles.modalCard} onPress={() => { }}>
+              <Text className="font-overlockBold" style={styles.modalTitle}>Edit Video</Text>
+              <Text className="font-overlock" style={styles.modalSubtitle}>You can change the title or card color.</Text>
 
-              <TouchableOpacity
-                style={[
-                  styles.modalBtn, styles.saveBtn,
-                  (!hasChanges || saving) && styles.btnDisabled,
-                ]}
-                onPress={handleSave}
-                disabled={!hasChanges || saving || deleting}
-              >
-                {saving
-                  ? <ActivityIndicator color="white" size="small" />
-                  : <Text className="font-overlockBold" style={styles.saveBtnText}>Save</Text>}
-              </TouchableOpacity>
-            </View>
+              {/* Read-only URL field */}
+              <TextInput
+                className="font-overlock"
+                style={[styles.input, styles.inputDisabled]}
+                value={
+                  editingVideo?.youtube_id
+                    ? `youtube.com/watch?v=${editingVideo.youtube_id}`
+                    : ''
+                }
+                editable={false}
+              />
+
+              {/* Editable title */}
+              <TextInput
+                className="font-overlock"
+                style={styles.input}
+                placeholder="Video Title"
+                placeholderTextColor="#C4B8D4"
+                value={editTitle}
+                onChangeText={setEditTitle}
+              />
+
+              {/* Color picker */}
+              <Text className="font-overlockBold" style={styles.colorLabel}>Choose card color</Text>
+              <View style={styles.colorRow}>
+                {THEME_COLORS.map((c) => (
+                  <TouchableOpacity
+                    key={c.hex}
+                    onPress={() => setEditColor(c.hex)}
+                    style={[
+                      styles.colorDot,
+                      { backgroundColor: c.hex },
+                      editColor === c.hex && styles.colorDotSelected,
+                    ]}
+                  />
+                ))}
+              </View>
+
+              {/* Sil / Kaydet */}
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalBtn, styles.deleteBtn, deleting && styles.btnDisabled]}
+                  onPress={handleDelete}
+                  disabled={deleting || saving}
+                >
+                  {deleting
+                    ? <ActivityIndicator color="white" size="small" />
+                    : <Text className="font-overlockBold" style={styles.deleteBtnText}>🗑️ Delete</Text>}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.modalBtn, styles.saveBtn,
+                    (!hasChanges || saving) && styles.btnDisabled,
+                  ]}
+                  onPress={handleSave}
+                  disabled={!hasChanges || saving || deleting}
+                >
+                  {saving
+                    ? <ActivityIndicator color="white" size="small" />
+                    : <Text className="font-overlockBold" style={styles.saveBtnText}>Save</Text>}
+                </TouchableOpacity>
+              </View>
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
-    </SafeAreaView>
+        </Modal>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
