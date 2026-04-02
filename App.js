@@ -15,9 +15,17 @@ import {
 } from "@expo-google-fonts/overlock";
 import { ToastProvider } from "./src/context/ToastContext";
 import { PASTEL_COLORS } from "./src/constants/theme";
+import * as Notifications from "expo-notifications";
 
 const YOUTUBE_REGEX = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 function ShareIntentHandler() {
   const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();

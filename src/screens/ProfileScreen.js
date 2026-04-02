@@ -3,7 +3,6 @@ import { View, Text, Image, ScrollView, TouchableOpacity, StatusBar, ActivityInd
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bell, User, LogOut, ChevronRight } from 'lucide-react-native';
 import { colors } from '../utils/colors';
-
 import { useProfileData } from '../hooks/useProfileData';
 import { NotificationModal, AccountSettingsModal, SignOutModal } from '../components/ProfileModals';
 

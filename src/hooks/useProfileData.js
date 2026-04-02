@@ -2,8 +2,11 @@ import { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
 import { getUserGlobalStreak, fetchVideos, updateNotificationSettings } from '../services/db';
+import { scheduleDailyReminder, cancelAllNotifications } from '../services/notificationService';
+import { useToast } from '../context/ToastContext';
 
 export function useProfileData() {
+  const { showToast } = useToast();
   const [profileUsername, setProfileUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [joinYear, setJoinYear] = useState('');
@@ -102,10 +105,28 @@ export function useProfileData() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      // 1. Update DB
       await updateNotificationSettings(user.id, { dailyReminder, streakAlerts });
+
+      // 2. Handle Local Notifications
+      if (dailyReminder) {
+        const scheduled = await scheduleDailyReminder();
+        if (scheduled) {
+          showToast("Settings Updated! 💜", "success");
+        } else {
+          // If fail (e.g. permission denied), we might want to revert the switch or alert
+          showToast("Permission required for notifications", "error");
+        }
+      } else {
+        await cancelAllNotifications();
+        showToast("Settings Updated", "success");
+      }
+
       if (onSuccess) onSuccess();
     } catch (err) {
       console.warn('Save notifications error:', err.message);
+      showToast("Error updating settings", "error");
     } finally {
       setSavingNotifications(false);
     }
