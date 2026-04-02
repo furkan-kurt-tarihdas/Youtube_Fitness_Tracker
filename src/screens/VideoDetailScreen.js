@@ -48,39 +48,43 @@ export default function VideoDetailScreen() {
   const currentReps = Number(todayReps) || 0;
   const goal = Number(video.daily_goal) || 1;
   const isCompletedForToday = currentReps >= goal;
-  
+  // nextRep: what the user is about to do, capped at goal so text never shows e.g. (4/3)
+  const nextRep = Math.min(currentReps + 1, goal);
+  // streak derived from leaderboard — always reflects latest goal-filtered data
+  const currentStreak = leaderboard.find(e => e.isCurrentUser)?.streak ?? 0;
+
   const { setHomeTabColor, resetHomeTabColor } = useTheme();
 
   useFocusEffect(
     useCallback(() => {
       setHomeTabColor(activeColor);
-      return () => resetHomeTabColor();
-    }, [activeColor, setHomeTabColor, resetHomeTabColor])
-  );
 
-  useEffect(() => {
-    async function loadStats() {
-      try {
-        const [c, lb, todayComps] = await Promise.all([
-          fetchCompletionCountForVideo(video.id),
-          getVideoLeaderboard(video.youtube_id),
-          fetchTodayCompletions(),
-        ]);
-        setCount(c);
-        setLeaderboard(lb);
+      // Reload all stats every time the screen comes into focus so streak
+      // reflects any goal changes made elsewhere
+      async function loadStats() {
+        try {
+          const [c, lb, todayComps] = await Promise.all([
+            fetchCompletionCountForVideo(video.id),
+            getVideoLeaderboard(video.youtube_id),
+            fetchTodayCompletions(),
+          ]);
+          setCount(c);
+          setLeaderboard(lb);
 
-        const thisVideoToday = todayComps.find(comp => comp.youtube_id === video.youtube_id);
-        const fetchedTodayReps = thisVideoToday ? (thisVideoToday.reps_completed ?? 1) : 0;
-        
-        setTodayReps(fetchedTodayReps);
-      } catch (err) {
-        console.error('Stats load failed:', err);
-      } finally {
-        setLoading(false);
+          const thisVideoToday = todayComps.find(comp => comp.youtube_id === video.youtube_id);
+          const fetchedTodayReps = thisVideoToday ? (thisVideoToday.reps_completed ?? 1) : 0;
+          setTodayReps(fetchedTodayReps);
+        } catch (err) {
+          console.error('Stats load failed:', err);
+        } finally {
+          setLoading(false);
+        }
       }
-    }
-    loadStats();
-  }, [video.id]);
+      loadStats();
+
+      return () => resetHomeTabColor();
+    }, [activeColor, setHomeTabColor, resetHomeTabColor, video.id, video.youtube_id])
+  );
 
   // Reanimated Shared Values
   const opacity     = useSharedValue(0);
@@ -243,7 +247,7 @@ export default function VideoDetailScreen() {
             >
               {isCompletedForToday 
                 ? 'Done for Today! 🎉' 
-                : `Complete Day ${count + 1} (${currentReps}/${goal})`}
+                : `Complete Day ${currentStreak + 1} (${nextRep}/${goal})`}
             </Text>
           )}
         </TouchableOpacity>
