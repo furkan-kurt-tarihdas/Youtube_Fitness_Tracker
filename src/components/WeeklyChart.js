@@ -29,7 +29,7 @@ export default function WeeklyChart({ data, isEmpty }) {
         intensity={40}
         tint="light"
         className="rounded-2xl overflow-hidden pt-4 pb-2"
-        style={{ position: 'relative' }}
+        style={{ position: 'relative', borderWidth: 1, borderColor: 'rgba(216, 180, 226, 0.4)' }}
       >
         <View
           className="flex-row justify-between items-end px-4 py-0 h-48"

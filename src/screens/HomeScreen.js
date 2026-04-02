@@ -21,7 +21,7 @@ const THEME_COLORS = [
   { hex: '#B4D4E7', label: 'Mavi' },
 ];
 
-const backgroundImage = require('../../assets/bg_9.jpg');
+const backgroundImage = require('../../assets/bg_lavender.png');
 
 export default function HomeScreen() {
   const [videos, setVideos] = useState([]);
@@ -179,6 +179,7 @@ export default function HomeScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <Header isEmpty={!hasVideos} />
+          <View style={{ height: 16 }} />
           <WeeklyChart data={weeklyData} isEmpty={!hasVideos} />
 
           {hasVideos ? (
@@ -224,7 +225,6 @@ export default function HomeScreen() {
                 editable={false}
               />
 
-              {/* Editable title */}
               <TextInput
                 className="font-overlock"
                 style={styles.input}

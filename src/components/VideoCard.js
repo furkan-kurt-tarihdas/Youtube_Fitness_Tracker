@@ -21,6 +21,7 @@ export default function VideoCard({ video, onComplete, onEditPress }) {
         intensity={40}
         tint="light"
         className="flex-row rounded-3xl overflow-hidden w-full h-full"
+        style={{ borderWidth: 1.5, borderColor: video.theme_color || video.themeColor }}
       >
         {/* Left color accent */}
         <View style={{ width: 8, backgroundColor: video.theme_color || video.themeColor }} />

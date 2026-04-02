@@ -58,6 +58,7 @@ export default function Header({ isEmpty }) {
         intensity={40}
         tint="light"
         className="flex-row items-center justify-between px-4 py-3 rounded-2xl overflow-hidden"
+        style={{ borderWidth: 1, borderColor: 'rgba(216, 180, 226, 0.4)' }}
       >
         {/* Left: Avatar + Texts */}
         <View className="flex-row items-center flex-1 mr-2">
