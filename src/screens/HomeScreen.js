@@ -13,6 +13,8 @@ import { useAddVideo } from '../context/AddVideoContext';
 import Header from '../components/Header';
 import WeeklyChart from '../components/WeeklyChart';
 import VideoCard from '../components/VideoCard';
+import { Plus } from 'lucide-react-native';
+import ColorPickerModal from '../components/ColorPickerModal';
 
 const THEME_COLORS = [
   { hex: '#D8B4E2', label: 'Mor' },
@@ -42,6 +44,9 @@ export default function HomeScreen() {
   const [editColor, setEditColor] = useState('');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+
+  const isCustomColor = !THEME_COLORS.find(c => c.hex === editColor);
 
   // Register loadData as the refresh callback for AddVideoBottomSheet
   const { registerOnVideoAdded } = useAddVideo();
@@ -259,7 +264,25 @@ export default function HomeScreen() {
                     ]}
                   />
                 ))}
+                {/* Custom Color Button */}
+                <TouchableOpacity
+                  onPress={() => setShowColorPicker(true)}
+                  style={[
+                    styles.colorDot,
+                    isCustomColor ? { backgroundColor: editColor } : { backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+                    isCustomColor && styles.colorDotSelected,
+                  ]}
+                >
+                  {!isCustomColor && <Plus size={20} color="#9CA3AF" />}
+                </TouchableOpacity>
               </View>
+
+              <ColorPickerModal
+                visible={showColorPicker}
+                onClose={() => setShowColorPicker(false)}
+                onSelectColor={setEditColor}
+                initialColor={editColor || THEME_COLORS[0].hex}
+              />
 
               {/* Sil / Kaydet */}
               <View style={styles.modalButtons}>

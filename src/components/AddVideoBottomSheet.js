@@ -15,6 +15,8 @@ import Animated, {
 import { useAddVideo } from '../context/AddVideoContext';
 import { addVideo } from '../services/db';
 import { colors } from '../utils/colors';
+import { Plus } from 'lucide-react-native';
+import ColorPickerModal from './ColorPickerModal';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -36,6 +38,9 @@ export default function AddVideoBottomSheet() {
   const [videoTitle, setVideoTitle] = useState('');
   const [themeColor, setThemeColor] = useState(THEME_COLORS[0].hex);
   const [adding, setAdding] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+
+  const isCustomColor = !THEME_COLORS.find(c => c.hex === themeColor);
 
   // Animation values
   const overlayOpacity = useSharedValue(0);
@@ -156,7 +161,26 @@ export default function AddVideoBottomSheet() {
                     ]}
                   />
                 ))}
+                
+                {/* Custom Color Button */}
+                <TouchableOpacity
+                  onPress={() => setShowPicker(true)}
+                  style={[
+                    styles.colorDot,
+                    isCustomColor ? { backgroundColor: themeColor } : { backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+                    isCustomColor && styles.colorDotSelected,
+                  ]}
+                >
+                  {!isCustomColor && <Plus size={20} color="#9CA3AF" />}
+                </TouchableOpacity>
               </View>
+
+              <ColorPickerModal
+                visible={showPicker}
+                onClose={() => setShowPicker(false)}
+                onSelectColor={setThemeColor}
+                initialColor={themeColor}
+              />
 
               <View style={styles.buttonRow}>
                 <TouchableOpacity
