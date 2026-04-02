@@ -55,37 +55,42 @@ export default function VideoCard({ video, onComplete, onEditPress, isCompletedT
           {video.title}
         </Text>
         
-        <View className="flex-row items-center justify-between mt-auto">
-          {/* Left: Goal */}
-          <View className="flex-row items-center">
-            <Target size={14} color={themeColor} strokeWidth={2.5} />
-            <Text className="text-[11px] font-overlock ml-1.5" style={{ color: '#7B6F9A' }}>
-              Hedef: {video.daily_goal || 1} Tekrar
-            </Text>
+        <View className="flex-row items-end justify-between mt-auto">
+          {/* Left: Info Column */}
+          <View className="flex-1">
+            {/* Goal */}
+            <View className="flex-row items-center mb-1">
+              <Target size={12} color={themeColor} strokeWidth={2.5} />
+              <Text className="text-[10px] font-overlockBold ml-1" style={{ color: colors.text }}>
+                Target: {video.daily_goal || 1} Rep{ (video.daily_goal || 1) > 1 ? 's' : '' }
+              </Text>
+            </View>
+
+            {/* Status */}
+            <View className="flex-row items-center">
+              {isCompletedToday ? (
+                <>
+                  <CheckCircle2 size={12} color="#27AE60" strokeWidth={2.5} />
+                  <Text className="text-[10px] font-overlockBold ml-1 text-green-600">
+                    Completed
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Clock size={12} color="#9A8FB5" strokeWidth={2.5} />
+                  <Text className="text-[10px] font-overlockBold ml-1 text-gray-400">
+                    Pending
+                  </Text>
+                </>
+              )}
+            </View>
           </View>
 
-          {/* Right: Status */}
+          {/* Right: Actions */}
           <View className="flex-row items-center">
-            {isCompletedToday ? (
-              <>
-                <CheckCircle2 size={13} color="#27AE60" strokeWidth={2.5} />
-                <Text className="text-[11px] font-overlock ml-1 text-green-600">
-                  Tamamlandı
-                </Text>
-              </>
-            ) : (
-              <>
-                <Clock size={13} color="#9A8FB5" strokeWidth={2.5} />
-                <Text className="text-[11px] font-overlock ml-1 text-gray-400">
-                  Bekliyor
-                </Text>
-              </>
-            )}
-
-            {/* Edit Button - slightly shifted to not overlap much */}
             {onEditPress && (
               <TouchableOpacity
-                style={[styles.editBtn, { marginLeft: 8 }]}
+                style={styles.editBtn}
                 onPress={(e) => {
                   e.stopPropagation();
                   onEditPress(video);
