@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
-import { getUserGlobalStreak, fetchVideos } from '../services/db';
+import { getUserGlobalStreak, fetchVideos, updateNotificationSettings } from '../services/db';
 
 export function useProfileData() {
   const [profileUsername, setProfileUsername] = useState('');
@@ -16,6 +16,10 @@ export function useProfileData() {
   const [savingUsername, setSavingUsername] = useState(false);
   const [signOutLoading, setSignOutLoading] = useState(false);
 
+  const [dailyReminder, setDailyReminder] = useState(false);
+  const [streakAlerts, setStreakAlerts] = useState(false);
+  const [savingNotifications, setSavingNotifications] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       async function loadProfile() {
@@ -29,7 +33,7 @@ export function useProfileData() {
 
           const { data: profile } = await supabase
             .from('profiles')
-            .select('username, avatar_url')
+            .select('username, avatar_url, daily_reminder, streak_alerts')
             .eq('id', user.id)
             .single();
 
@@ -42,6 +46,9 @@ export function useProfileData() {
           setProfileUsername(name);
           setAvatarUrl(profile?.avatar_url || null);
           setEditUsername(name);
+
+          setDailyReminder(profile?.daily_reminder ?? false);
+          setStreakAlerts(profile?.streak_alerts ?? false);
 
           const [videos, streak] = await Promise.all([
             fetchVideos(),
@@ -90,6 +97,20 @@ export function useProfileData() {
     }
   }
 
+  async function handleSaveNotifications(onSuccess) {
+    setSavingNotifications(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await updateNotificationSettings(user.id, { dailyReminder, streakAlerts });
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      console.warn('Save notifications error:', err.message);
+    } finally {
+      setSavingNotifications(false);
+    }
+  }
+
   return {
     profileUsername,
     avatarUrl,
@@ -103,5 +124,11 @@ export function useProfileData() {
     signOutLoading,
     handleSaveUsername,
     handleSignOut,
+    dailyReminder,
+    setDailyReminder,
+    streakAlerts,
+    setStreakAlerts,
+    savingNotifications,
+    handleSaveNotifications,
   };
 }

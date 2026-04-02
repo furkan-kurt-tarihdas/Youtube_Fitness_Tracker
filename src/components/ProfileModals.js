@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, Modal, Pressable, Switch, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { colors } from '../utils/colors';
 
-export function NotificationModal({ visible, onClose }) {
-  const [dailyReminder, setDailyReminder] = useState(true);
-  const [streakAlert, setStreakAlert] = useState(true);
-
+export function NotificationModal({ 
+  visible, onClose, 
+  dailyReminder, setDailyReminder, 
+  streakAlerts, setStreakAlerts, 
+  onSave, saving 
+}) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable className="flex-1 bg-black/50 justify-center items-center px-6" onPress={onClose}>
@@ -13,14 +15,14 @@ export function NotificationModal({ visible, onClose }) {
           <Text className="text-xl font-overlockBold mb-6" style={{ color: colors.text }}>Notification Settings</Text>
           <View className="flex-row items-center justify-between mb-4 py-3 px-4 bg-white rounded-2xl">
             <Text className="text-sm font-overlock font-semibold flex-1 mr-3" style={{ color: colors.text }}>Daily Workout Reminder</Text>
-            <Switch value={dailyReminder} onValueChange={setDailyReminder} trackColor={{ false: '#D1D5DB', true: colors.primary }} thumbColor="#FFF" />
+            <Switch value={dailyReminder} onValueChange={setDailyReminder} trackColor={{ false: '#e5e5e5', true: '#c4a6d1' }} thumbColor="#FFFFFF" />
           </View>
           <View className="flex-row items-center justify-between mb-6 py-3 px-4 bg-white rounded-2xl">
             <Text className="text-sm font-overlock font-semibold flex-1 mr-3" style={{ color: colors.text }}>Streak Alerts</Text>
-            <Switch value={streakAlert} onValueChange={setStreakAlert} trackColor={{ false: '#D1D5DB', true: colors.primary }} thumbColor="#FFF" />
+            <Switch value={streakAlerts} onValueChange={setStreakAlerts} trackColor={{ false: '#e5e5e5', true: '#c4a6d1' }} thumbColor="#FFFFFF" />
           </View>
-          <TouchableOpacity onPress={onClose} className="w-full h-14 rounded-2xl items-center justify-center" style={{ backgroundColor: colors.primary }}>
-            <Text className="text-base font-overlockBold" style={{ color: colors.text }}>Done</Text>
+          <TouchableOpacity onPress={onSave} disabled={saving} className="w-full h-14 rounded-2xl items-center justify-center" style={{ backgroundColor: colors.primary, opacity: saving ? 0.6 : 1 }}>
+            {saving ? <ActivityIndicator color={colors.text} /> : <Text className="text-base font-overlockBold" style={{ color: colors.text }}>Done</Text>}
           </TouchableOpacity>
         </Pressable>
       </Pressable>

@@ -12,6 +12,8 @@ export default function ProfileScreen() {
     profileUsername, avatarUrl, joinYear, totalVideos, currentStreak, dataLoading,
     editUsername, setEditUsername, savingUsername, signOutLoading,
     handleSaveUsername, handleSignOut,
+    dailyReminder, setDailyReminder, streakAlerts, setStreakAlerts,
+    savingNotifications, handleSaveNotifications
   } = useProfileData();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -114,6 +116,12 @@ export default function ProfileScreen() {
       <NotificationModal 
         visible={showNotifications} 
         onClose={() => setShowNotifications(false)} 
+        dailyReminder={dailyReminder}
+        setDailyReminder={setDailyReminder}
+        streakAlerts={streakAlerts}
+        setStreakAlerts={setStreakAlerts}
+        saving={savingNotifications}
+        onSave={() => handleSaveNotifications(() => setShowNotifications(false))}
       />
 
       <AccountSettingsModal 

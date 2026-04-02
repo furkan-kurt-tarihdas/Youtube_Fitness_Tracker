@@ -401,6 +401,21 @@ export async function getVideoLeaderboard(youtubeId) {
 }
 
 
+/**
+ * Update a user's notification settings.
+ */
+export async function updateNotificationSettings(userId, settings) {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ 
+      daily_reminder: settings.dailyReminder, 
+      streak_alerts: settings.streakAlerts 
+    })
+    .eq('id', userId);
+
+  if (error) throw error;
+}
+
 // ─── Helpers ───────────────────────────────────────────────
 
 /**
