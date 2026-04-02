@@ -19,6 +19,7 @@ import {
   fetchCompletionCountForVideo, 
   recordCompletion,
   getVideoLeaderboard,
+  fetchTodayCompletions,
 } from '../services/db';
 import Leaderboard from '../components/Leaderboard';
 import StreakCalendar from '../components/StreakCalendar';
@@ -41,8 +42,13 @@ export default function VideoDetailScreen() {
 
   const [count, setCount]               = useState(0);
   const [loading, setLoading]           = useState(true);
-  const [buttonText, setButtonText]     = useState('Loading...');
   const [leaderboard, setLeaderboard]   = useState([]);
+  const [todayReps, setTodayReps]       = useState(0);
+
+  const currentReps = Number(todayReps) || 0;
+  const goal = Number(video.daily_goal) || 1;
+  const isCompletedForToday = currentReps >= goal;
+  const displayDay = currentReps > 0 ? count : count + 1;
   
   const { setHomeTabColor, resetHomeTabColor } = useTheme();
 
@@ -56,16 +62,20 @@ export default function VideoDetailScreen() {
   useEffect(() => {
     async function loadStats() {
       try {
-        const [c, lb] = await Promise.all([
+        const [c, lb, todayComps] = await Promise.all([
           fetchCompletionCountForVideo(video.id),
           getVideoLeaderboard(video.youtube_id),
+          fetchTodayCompletions(),
         ]);
         setCount(c);
-        setButtonText(`Complete Day ${c + 1}`);
         setLeaderboard(lb);
+
+        const thisVideoToday = todayComps.find(comp => comp.youtube_id === video.youtube_id);
+        const fetchedTodayReps = thisVideoToday ? (thisVideoToday.reps_completed ?? 1) : 0;
+        
+        setTodayReps(fetchedTodayReps);
       } catch (err) {
         console.error('Stats load failed:', err);
-        setButtonText('Ready?');
       } finally {
         setLoading(false);
       }
@@ -91,14 +101,15 @@ export default function VideoDetailScreen() {
   const handleFinish = async () => {
     try {
       await recordCompletion(video);
-      const newCount = count + 1;
-      setCount(newCount);
+      setCount(prev => Number(prev) + 1);
+      setTodayReps(prev => Number(prev) + 1);
 
       // Refresh leaderboard after completing
       getVideoLeaderboard(video.youtube_id).then(setLeaderboard).catch(console.warn);
     } catch (error) {
       if (error.message.includes('already completed')) {
         // Already done today — silently ignore (button should be labelled accordingly)
+        setTodayReps(goal);
         return;
       }
       console.warn('Completion error:', error.message);
@@ -125,9 +136,7 @@ export default function VideoDetailScreen() {
     );
     rotate.value = withSequence(
       withSpring(-5),
-      withDelay(2500, withTiming(20, { duration: 500 }, (finished) => {
-        if (finished) runOnJS(setButtonText)(`Day ${count + 1} Completed! 🎉`);
-      }))
+      withDelay(2500, withTiming(20, { duration: 500 }))
     );
   };
 
@@ -221,15 +230,20 @@ export default function VideoDetailScreen() {
         <TouchableOpacity 
           activeOpacity={0.8}
           onPress={handleFinish}
-          disabled={loading}
+          disabled={loading || isCompletedForToday}
           className="w-full h-16 rounded-3xl justify-center items-center shadow-md shadow-gray-400"
-          style={{ backgroundColor: activeColor, opacity: loading ? 0.6 : 1 }}
+          style={{ backgroundColor: isCompletedForToday ? '#B5E4CA' : activeColor, opacity: loading ? 0.6 : 1 }}
         >
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text className="text-white text-lg font-overlockBold tracking-wider">
-              {buttonText}
+            <Text 
+              className="text-lg font-overlockBold tracking-wider"
+              style={{ color: isCompletedForToday ? '#2E7D32' : 'white' }}
+            >
+              {isCompletedForToday 
+                ? 'Done for Today! 🎉' 
+                : `Complete Day ${displayDay} (${currentReps}/${goal})`}
             </Text>
           )}
         </TouchableOpacity>

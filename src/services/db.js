@@ -127,24 +127,65 @@ export async function recordCompletion(video) {
 
   const today = new Date().toISOString().split('T')[0];
 
-  const { data, error } = await supabase
+  // 1. Check if a record exists for today
+  const { data: existing, error: selectError } = await supabase
     .from('completions')
-    .insert({
-      user_id: user.id,
-      video_id: video.id,
-      youtube_id: video.youtube_id,
-      completed_date: today,
-    })
-    .select()
-    .single();
+    .select('id, reps_completed')
+    .eq('user_id', user.id)
+    .eq('video_id', video.id)
+    .eq('completed_date', today)
+    .maybeSingle();
 
-  if (error) {
-    if (error.code === '23505') throw new Error('You already completed this video today!');
-    throw error;
+  if (selectError) {
+    console.error('[recordCompletion] Select error:', selectError.message);
+    throw selectError;
   }
 
-  return data;
+  if (existing) {
+    // 2a. Record exists → UPDATE reps_completed + 1
+    const newReps = (existing.reps_completed ?? 1) + 1;
+    console.log(`[recordCompletion] Updating existing record id=${existing.id} → reps_completed=${newReps}`);
+
+    const { data, error } = await supabase
+      .from('completions')
+      .update({ reps_completed: newReps })
+      .eq('id', existing.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[recordCompletion] Update error:', error.message);
+      throw error;
+    }
+
+    console.log('[recordCompletion] Updated successfully:', data);
+    return data;
+  } else {
+    // 2b. No record → INSERT with reps_completed = 1
+    console.log(`[recordCompletion] Inserting new record for video_id=${video.id}, date=${today}`);
+
+    const { data, error } = await supabase
+      .from('completions')
+      .insert({
+        user_id: user.id,
+        video_id: video.id,
+        youtube_id: video.youtube_id,
+        completed_date: today,
+        reps_completed: 1,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[recordCompletion] Insert error:', error.message);
+      throw error;
+    }
+
+    console.log('[recordCompletion] Inserted successfully:', data);
+    return data;
+  }
 }
+
 
 /**
  * Fetch how many times a specific video was completed by the current user.
@@ -168,7 +209,7 @@ export async function fetchCompletionCountForVideo(videoId) {
  * Fetches title from YouTube oEmbed API automatically.
  * Falls back to provided title or generic label.
  */
-export async function addVideo(youtubeUrl, titleHint, themeColor) {
+export async function addVideo(youtubeUrl, titleHint, themeColor, dailyGoal = 1) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('You need to be signed in to add a video.');
 
@@ -199,6 +240,7 @@ export async function addVideo(youtubeUrl, titleHint, themeColor) {
       title: title.trim(),
       thumbnail_url: thumbnailUrl,
       theme_color: themeColor,
+      daily_goal: dailyGoal,
     })
     .select()
     .single();
@@ -214,10 +256,10 @@ export async function addVideo(youtubeUrl, titleHint, themeColor) {
 /**
  * Update a video's title and/or theme color.
  */
-export async function updateVideo(id, newTitle, newColor) {
+export async function updateVideo(id, newTitle, newColor, dailyGoal = 1) {
   const { error } = await supabase
     .from('videos')
-    .update({ title: newTitle.trim(), theme_color: newColor })
+    .update({ title: newTitle.trim(), theme_color: newColor, daily_goal: dailyGoal })
     .eq('id', id);
 
   if (error) throw error;

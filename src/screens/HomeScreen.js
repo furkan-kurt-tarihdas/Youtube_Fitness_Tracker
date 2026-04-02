@@ -42,6 +42,7 @@ export default function HomeScreen() {
   const [editingVideo, setEditingVideo] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [editColor, setEditColor] = useState('');
+  const [editVideoTarget, setEditVideoTarget] = useState(1);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -106,6 +107,7 @@ export default function HomeScreen() {
     setEditingVideo(video);
     setEditTitle(video.title);
     setEditColor(video.theme_color || THEME_COLORS[0].hex);
+    setEditVideoTarget(video.daily_goal || 1);
     setIsEditModalVisible(true);
   }
 
@@ -116,14 +118,15 @@ export default function HomeScreen() {
 
   const hasChanges = editingVideo && (
     editTitle.trim() !== editingVideo.title ||
-    editColor !== editingVideo.theme_color
+    editColor !== editingVideo.theme_color ||
+    editVideoTarget !== (editingVideo.daily_goal || 1)
   );
 
   async function handleSave() {
     if (!hasChanges || !editingVideo) return;
     setSaving(true);
     try {
-      await updateVideo(editingVideo.id, editTitle, editColor);
+      await updateVideo(editingVideo.id, editTitle, editColor, editVideoTarget);
       closeEditModal();
       await loadData();
       showToast('Video updated! ✏️');
@@ -283,6 +286,28 @@ export default function HomeScreen() {
                 onSelectColor={setEditColor}
                 initialColor={editColor || THEME_COLORS[0].hex}
               />
+
+              <Text className="font-overlockBold" style={styles.colorLabel}>Daily Target (Reps)</Text>
+              <View style={styles.colorRow}>
+                {[1, 2, 3].map((num) => (
+                  <TouchableOpacity
+                    key={num}
+                    onPress={() => setEditVideoTarget(num)}
+                    style={[
+                      styles.colorDot,
+                      { backgroundColor: editVideoTarget === num ? colors.primary : '#F3EEF9', alignItems: 'center', justifyContent: 'center' },
+                      editVideoTarget === num && styles.colorDotSelected,
+                    ]}
+                  >
+                    <Text 
+                      className="font-overlockBold" 
+                      style={{ fontSize: 16, color: editVideoTarget === num ? 'white' : '#9A8FB5' }}
+                    >
+                      {num}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
               {/* Sil / Kaydet */}
               <View style={styles.modalButtons}>

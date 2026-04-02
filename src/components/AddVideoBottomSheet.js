@@ -37,6 +37,7 @@ export default function AddVideoBottomSheet() {
   const [youtubeLink, setYoutubeLink] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
   const [themeColor, setThemeColor] = useState(THEME_COLORS[0].hex);
+  const [newVideoTarget, setNewVideoTarget] = useState(1);
   const [adding, setAdding] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
 
@@ -75,6 +76,7 @@ export default function AddVideoBottomSheet() {
       setYoutubeLink('');
       setVideoTitle('');
       setThemeColor(THEME_COLORS[0].hex);
+      setNewVideoTarget(1);
       setAdding(false);
     }
   }, [isBottomSheetVisible]);
@@ -94,7 +96,7 @@ export default function AddVideoBottomSheet() {
     }
     setAdding(true);
     try {
-      await addVideo(youtubeLink.trim(), videoTitle.trim(), themeColor);
+      await addVideo(youtubeLink.trim(), videoTitle.trim(), themeColor, newVideoTarget);
       hide();
       notifyVideoAdded(); // Instantly refresh HomeScreen
     } catch (err) {
@@ -181,6 +183,28 @@ export default function AddVideoBottomSheet() {
                 onSelectColor={setThemeColor}
                 initialColor={themeColor}
               />
+
+              <Text className="font-overlockBold" style={styles.colorLabel}>Daily Target (Reps)</Text>
+              <View style={styles.colorRow}>
+                {[1, 2, 3].map((num) => (
+                  <TouchableOpacity
+                    key={num}
+                    onPress={() => setNewVideoTarget(num)}
+                    style={[
+                      styles.colorDot,
+                      { backgroundColor: newVideoTarget === num ? colors.primary : '#F3EEF9', alignItems: 'center', justifyContent: 'center' },
+                      newVideoTarget === num && styles.colorDotSelected,
+                    ]}
+                  >
+                    <Text 
+                      className="font-overlockBold" 
+                      style={{ fontSize: 16, color: newVideoTarget === num ? 'white' : '#9A8FB5' }}
+                    >
+                      {num}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
               <View style={styles.buttonRow}>
                 <TouchableOpacity
