@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
-  SafeAreaView, ScrollView, View, Text, StatusBar,
+  ScrollView, View, Text, StatusBar,
   TextInput, TouchableOpacity, Modal, Pressable,
   StyleSheet, ActivityIndicator, Animated, AppState,
   ImageBackground
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../utils/colors';
 import { fetchVideos, fetchWeeklyCompletions, fetchTodayCompletions, updateVideo, deleteVideo } from '../services/db';

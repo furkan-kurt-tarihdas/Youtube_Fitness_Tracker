@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { colors } from '../utils/colors';
 
 const DEFAULT_AVATAR = (username) =>
@@ -10,54 +11,132 @@ export default function Leaderboard({ data, themeColor }) {
   
   if (!data || data.length === 0) {
     return (
-      <View className="bg-white rounded-3xl p-5 shadow-sm shadow-gray-200 mb-6 mx-6">
-        <Text className="text-lg font-overlockBold mb-2" style={{ color: colors.text }}>
+      <BlurView 
+        intensity={40} 
+        tint="light" 
+        style={styles.container}
+      >
+        <Text style={styles.title}>
           Leaderboard
         </Text>
-        <Text className="text-sm font-overlock text-center py-4" style={{ color: '#9CA3AF' }}>
+        <Text style={styles.emptyText}>
           No completions yet. Be the first! 🏆
         </Text>
-      </View>
+      </BlurView>
     );
   }
 
   return (
-    <View className="bg-white rounded-3xl p-5 shadow-sm shadow-gray-200 mb-6 mx-6">
-      <Text className="text-lg font-overlockBold mb-4" style={{ color: colors.text }}>
+    <BlurView 
+      intensity={40} 
+      tint="light" 
+      style={styles.container}
+    >
+      <Text style={styles.title}>
         Leaderboard
       </Text>
       {data.map((item, index) => (
         <View
           key={item.id}
-          className="flex-row items-center justify-between mb-3 p-3 rounded-2xl"
-          style={{ backgroundColor: item.isCurrentUser ? `${highlightColor}40` : 'transparent' }}
+          style={[
+            styles.row,
+            { backgroundColor: item.isCurrentUser ? `${highlightColor}40` : 'transparent' }
+          ]}
         >
-          <View className="flex-row items-center flex-1">
-            <Text className="text-gray-500 font-overlockBold w-6 text-center mr-2">
+          <View style={styles.userInfo}>
+            <Text style={styles.rank}>
               {index + 1}
             </Text>
             <Image
               source={{ uri: item.avatar_url || DEFAULT_AVATAR(item.username) }}
-              className="w-10 h-10 rounded-full mr-3 bg-gray-200"
+              style={styles.avatar}
             />
             <Text
-              className="text-base flex-1 font-overlockBold"
+              style={styles.username}
               numberOfLines={1}
-              style={{
-                color: colors.text,
-              }}
             >
               {item.username}
               {item.isCurrentUser ? ' (You)' : ''}
             </Text>
           </View>
-          <View className="px-3 py-1 rounded-full bg-black/5 ml-2">
-            <Text className="text-xs font-overlockBold" style={{ color: colors.text }}>
+          <View style={styles.badge}>
+            <Text style={styles.streakText}>
               {item.streak}-day streak
             </Text>
           </View>
         </View>
       ))}
-    </View>
+    </BlurView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    overflow: 'hidden',
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 20,
+    marginHorizontal: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(216, 180, 226, 0.4)',
+  },
+  title: {
+    fontSize: 16,
+    fontFamily: 'Overlock_700Bold',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 13,
+    fontFamily: 'Overlock_400Regular',
+    textAlign: 'center',
+    paddingVertical: 12,
+    color: '#9CA3AF',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    padding: 8,
+    borderRadius: 12,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  rank: {
+    color: '#6B7280',
+    fontFamily: 'Overlock_700Bold',
+    fontSize: 13,
+    width: 20,
+    textAlign: 'center',
+    marginRight: 6,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+    backgroundColor: '#F3F4F6',
+  },
+  username: {
+    fontSize: 14,
+    flex: 1,
+    fontFamily: 'Overlock_700Bold',
+    color: colors.text,
+  },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 99,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    marginLeft: 6,
+  },
+  streakText: {
+    fontSize: 11,
+    fontFamily: 'Overlock_700Bold',
+    color: colors.text,
+  },
+});

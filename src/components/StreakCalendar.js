@@ -1,62 +1,191 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { colors } from '../utils/colors';
+import { fetchMonthlyCompletions } from '../services/db';
 
-export default function StreakCalendar({ themeColor, completedDates = [] }) {
-  // We'll show the last 30 slots (or current month simplified)
-  const days = Array.from({ length: 30 }, (_, i) => i + 1);
-  const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  
-  // Extract Day numbers from completedDates (YYYY-MM-DD -> DD) 
-  // ONLY if they match the current month/year context. 
-  // For simplicity since it's a fixed 30-day view:
-  const completedDayNumbers = completedDates.map(dateStr => {
-    const d = new Date(dateStr);
-    return d.getDate();
+const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+
+const hexToRgba = (hex, alpha) => {
+  if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return `rgba(100,100,100,${alpha})`;
+  let r = 0, g = 0, b = 0;
+  if (hex.length === 4) {
+    r = parseInt(hex[1] + hex[1], 16);
+    g = parseInt(hex[2] + hex[2], 16);
+    b = parseInt(hex[3] + hex[3], 16);
+  } else if (hex.length === 7) {
+    r = parseInt(hex.substring(1, 3), 16);
+    g = parseInt(hex.substring(3, 5), 16);
+    b = parseInt(hex.substring(5, 7), 16);
+  }
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+export default function StreakCalendar({ themeColor, videoId, refreshTrigger }) {
+  const [currentDate, setCurrentDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
   });
+  
+  const [monthlyData, setMonthlyData] = useState([]);
 
   const activeColor = themeColor || colors.primary;
 
+  useEffect(() => {
+    if (!videoId) return;
+
+    const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+    const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-01`;
+    const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+
+    fetchMonthlyCompletions(videoId, startStr, endStr)
+      .then(data => setMonthlyData(data))
+      .catch(err => console.warn('Monthly sync failed', err));
+  }, [currentDate, videoId, refreshTrigger]);
+
+  const goToPreviousMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  // Calendar math
+  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  const firstDayOfWeek = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+  // Transform: Sunday=0, Monday=1 -> We want Monday to be index 0
+  const offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+
+  // Process mapping
+  const completionsMap = {};
+  monthlyData.forEach(d => {
+    if (!d || !d.completed_date) return;
+    const parts = d.completed_date.split('-');
+    if (parts.length === 3) {
+      const day = parseInt(parts[2], 10);
+      completionsMap[day] = (completionsMap[day] || 0) + (d.reps_completed || 1);
+    }
+  });
+
+  const getHeatmapBg = (count) => {
+    if (count === 0) return 'transparent';
+    if (count === 1) return hexToRgba(activeColor, 0.4);
+    if (count === 2) return hexToRgba(activeColor, 0.7);
+    return hexToRgba(activeColor, 1);
+  };
+
   return (
-    <View className="bg-white rounded-3xl p-5 shadow-sm shadow-gray-200 mx-6 mb-8">
-      <Text className="text-lg font-bold mb-4" style={{ color: colors.text }}>
-        Your Progress
-      </Text>
+    <BlurView 
+      intensity={40} 
+      tint="light" 
+      style={{
+        overflow: 'hidden',
+        borderRadius: 24,
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 12,
+        marginHorizontal: 24,
+        marginBottom: 32,
+        borderWidth: 1,
+        borderColor: 'rgba(216, 180, 226, 0.4)',
+      }}
+    >
       
-      <View className="flex-row justify-between mb-3 px-1">
-        {weekDays.map((day, i) => (
-          <Text key={i} className="text-gray-400 font-bold w-8 text-center text-xs">
+      {/* Header */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text }}>
+          Your Progress
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={goToPreviousMonth} style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
+            <ChevronLeft size={18} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={{ fontSize: 14, fontWeight: 'bold', width: 96, textAlign: 'center', color: colors.text }}>
+            {`${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
+          </Text>
+          <TouchableOpacity onPress={goToNextMonth} style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
+            <ChevronRight size={18} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* WeekDays Header */}
+      <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
+          <Text key={i} style={{ width: '12%', marginHorizontal: '1.1%', textAlign: 'center', fontSize: 12, fontWeight: 'bold', color: '#9CA3AF' }}>
             {day}
           </Text>
         ))}
       </View>
-      
-      <View className="flex-row flex-wrap justify-start">
-        {days.map((day, i) => {
-          const isCompleted = completedDayNumbers.includes(day);
+
+      {/* Calendar Grid */}
+      <View className="flex-row flex-wrap" style={{ alignItems: 'flex-start' }}>
+        {Array.from({ length: 42 }).map((_, i) => {
+          if (i < offset) {
+            return <View key={`pad-${i}`} style={{ width: '12%', marginHorizontal: '1.1%', aspectRatio: 1, marginBottom: 6 }} />;
+          }
+          const dayNum = i - offset + 1;
+          if (dayNum > daysInMonth) {
+            return <View key={`next-pad-${dayNum}`} style={{ width: '12%', marginHorizontal: '1.1%', aspectRatio: 1, marginBottom: 6 }} />;
+          }
+
+          const count = completionsMap[dayNum] || 0;
+          const hasCompletion = count > 0;
           return (
             <View 
-              key={i} 
-              className="w-10 h-10 rounded-xl items-center justify-center m-1"
+              key={`day-${dayNum}`} 
               style={{
-                backgroundColor: isCompleted ? activeColor : '#F3F4F6',
-                width: '12.5%', 
-                marginHorizontal: '0.8%',
+                width: '12%', 
+                marginHorizontal: '1.1%', 
+                aspectRatio: 1, 
+                marginBottom: 6,
+                borderRadius: 12,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: getHeatmapBg(count),
+                ...(hasCompletion ? {
+                  borderWidth: 1,
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 2,
+                  elevation: 2,
+                } : {})
               }}
             >
               <Text 
-                className="text-xs font-bold"
                 style={{ 
-                  color: isCompleted ? 'white' : colors.text,
-                  opacity: isCompleted ? 1 : 0.6
+                  fontSize: 12, 
+                  fontWeight: 'bold', 
+                  color: hasCompletion ? 'white' : '#6B7280', 
+                  opacity: hasCompletion ? 1 : 0.5 
                 }}
               >
-                {day}
+                {dayNum}
               </Text>
             </View>
           );
         })}
       </View>
-    </View>
+
+      {/* Legend / Skala */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 4 }}>
+        <Text style={{ fontSize: 12, color: '#6B7280', marginRight: 8, fontWeight: 'bold' }}>Less</Text>
+        <View style={{ width: 12, height: 12, borderRadius: 2, marginRight: 4, borderWidth: 1, borderColor: 'rgba(216, 180, 226, 0.4)', backgroundColor: 'transparent' }} />
+        <View style={{ width: 12, height: 12, borderRadius: 2, marginRight: 4, borderWidth: 1, borderColor: 'rgba(216, 180, 226, 0.4)', backgroundColor: getHeatmapBg(1) }} />
+        <View style={{ width: 12, height: 12, borderRadius: 2, marginRight: 4, borderWidth: 1, borderColor: 'rgba(216, 180, 226, 0.4)', backgroundColor: getHeatmapBg(2) }} />
+        <View style={{ width: 12, height: 12, borderRadius: 2, marginRight: 8, borderWidth: 1, borderColor: 'rgba(216, 180, 226, 0.4)', backgroundColor: getHeatmapBg(3) }} />
+        <Text style={{ fontSize: 12, color: '#6B7280', fontWeight: 'bold' }}>More</Text>
+      </View>
+
+    </BlurView>
   );
 }

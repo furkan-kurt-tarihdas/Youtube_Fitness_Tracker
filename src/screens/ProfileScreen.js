@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { 
-  View, Text, Image, ScrollView, TouchableOpacity, SafeAreaView, 
+  View, Text, Image, ScrollView, TouchableOpacity, 
   StatusBar, Modal, Switch, TextInput, Pressable, ActivityIndicator
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bell, User, LogOut, ChevronRight } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../utils/colors';

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, StatusBar, Image, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, Image, ActivityIndicator, SafeAreaView, ImageBackground } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { BlurView } from 'expo-blur';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Animated, { 
   useSharedValue, 
@@ -16,16 +17,16 @@ import Animated, {
 import { colors } from '../utils/colors';
 import { 
   fetchCompletionCountForVideo, 
-  fetchCompletionsForVideo, 
   recordCompletion,
   getVideoLeaderboard,
 } from '../services/db';
 import Leaderboard from '../components/Leaderboard';
 import StreakCalendar from '../components/StreakCalendar';
 import { useTheme } from '../context/ThemeContext';
-import { useFocusEffect } from '@react-navigation/native';
+// useFocusEffect combined above
 
 const mascotImage = require('../../assets/day_completed.png');
+const backgroundImage = require('../../assets/bg_lavender.png');
 
 export default function VideoDetailScreen() {
   const navigation = useNavigation();
@@ -39,7 +40,6 @@ export default function VideoDetailScreen() {
   const activeColor = video.theme_color || video.themeColor || colors.primary;
 
   const [count, setCount]               = useState(0);
-  const [completedDates, setCompletedDates] = useState([]);
   const [loading, setLoading]           = useState(true);
   const [buttonText, setButtonText]     = useState('Loading...');
   const [leaderboard, setLeaderboard]   = useState([]);
@@ -47,22 +47,20 @@ export default function VideoDetailScreen() {
   const { setHomeTabColor, resetHomeTabColor } = useTheme();
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       setHomeTabColor(activeColor);
       return () => resetHomeTabColor();
-    }, [activeColor])
+    }, [activeColor, setHomeTabColor, resetHomeTabColor])
   );
 
   useEffect(() => {
     async function loadStats() {
       try {
-        const [c, dates, lb] = await Promise.all([
+        const [c, lb] = await Promise.all([
           fetchCompletionCountForVideo(video.id),
-          fetchCompletionsForVideo(video.id),
           getVideoLeaderboard(video.youtube_id),
         ]);
         setCount(c);
-        setCompletedDates(dates);
         setButtonText(`Complete Day ${c + 1}`);
         setLeaderboard(lb);
       } catch (err) {
@@ -95,8 +93,6 @@ export default function VideoDetailScreen() {
       await recordCompletion(video);
       const newCount = count + 1;
       setCount(newCount);
-      const today = new Date().toISOString().split('T')[0];
-      setCompletedDates(ex => [...ex, today]);
 
       // Refresh leaderboard after completing
       getVideoLeaderboard(video.youtube_id).then(setLeaderboard).catch(console.warn);
@@ -136,31 +132,73 @@ export default function VideoDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+    <ImageBackground
+      source={backgroundImage}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       
       {/* Header */}
-      <View className="flex-row items-center px-6 py-4 mt-2 mb-2">
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()}
-          className="w-10 h-10 rounded-full bg-white items-center justify-center shadow-sm shadow-gray-200 mr-4"
+      <View style={{ paddingHorizontal: 24, paddingTop: 16 }}>
+        <BlurView 
+          intensity={40} 
+          tint="light" 
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            borderRadius: 24,
+            overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: 'rgba(216, 180, 226, 0.4)',
+          }}
         >
-          <ChevronLeft color={colors.text} size={24} />
-        </TouchableOpacity>
-        <Text className="text-xl font-overlockBold flex-1" style={{ color: colors.text }} numberOfLines={1}>
-          {video.title}
-        </Text>
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              backgroundColor: 'white',
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 2,
+              marginRight: 12
+            }}
+          >
+            <ChevronLeft color={colors.text} size={22} />
+          </TouchableOpacity>
+          <Text 
+            style={{ 
+              fontSize: 18, 
+              fontFamily: 'Overlock_700Bold', 
+              color: colors.text,
+              flex: 1
+            }} 
+            numberOfLines={1}
+          >
+            {video.title}
+          </Text>
+        </BlurView>
       </View>
       
       {/* Content */}
       <ScrollView 
-        contentContainerStyle={{ paddingBottom: 220 }} 
+        contentContainerStyle={{ paddingBottom: 220, paddingTop: 20 }} 
         showsVerticalScrollIndicator={false}
       >
         <Leaderboard data={leaderboard} themeColor={activeColor} />
         <StreakCalendar 
           themeColor={activeColor} 
-          completedDates={completedDates}
+          videoId={video.id}
+          refreshTrigger={count}
         />
       </ScrollView>
 
@@ -197,5 +235,6 @@ export default function VideoDetailScreen() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+    </ImageBackground>
   );
 }

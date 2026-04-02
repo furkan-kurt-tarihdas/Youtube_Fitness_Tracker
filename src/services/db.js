@@ -100,6 +100,25 @@ export async function fetchCompletionsForVideo(videoId) {
 }
 
 /**
+ * Fetch completions for a specific month for a video.
+ */
+export async function fetchMonthlyCompletions(videoId, monthStart, monthEnd) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('completions')
+    .select('completed_date, reps_completed')
+    .eq('user_id', user.id)
+    .eq('video_id', videoId)
+    .gte('completed_date', monthStart)
+    .lte('completed_date', monthEnd);
+
+  if (error) throw error;
+  return data;
+}
+
+/**
  * Record a completion for today for the given video.
  */
 export async function recordCompletion(video) {
