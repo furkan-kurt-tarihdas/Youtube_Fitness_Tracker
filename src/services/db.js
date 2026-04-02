@@ -63,6 +63,26 @@ export async function fetchWeeklyCompletions() {
 }
 
 /**
+ * Fetch completions for the current user for today only.
+ * This helps in determining if a video's daily goal is met.
+ */
+export async function fetchTodayCompletions() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('completions')
+    .select('youtube_id, reps_completed')
+    .eq('user_id', user.id)
+    .eq('completed_date', today);
+
+  if (error) throw error;
+  return data;
+}
+
+/**
  * Fetch all completion dates for a specific video to show on the calendar.
  */
 export async function fetchCompletionsForVideo(videoId) {

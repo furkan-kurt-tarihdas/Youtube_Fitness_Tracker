@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../utils/colors';
-import { fetchVideos, fetchWeeklyCompletions, updateVideo, deleteVideo } from '../services/db';
+import { fetchVideos, fetchWeeklyCompletions, fetchTodayCompletions, updateVideo, deleteVideo } from '../services/db';
 import { useAddVideo } from '../context/AddVideoContext';
 import Header from '../components/Header';
 import WeeklyChart from '../components/WeeklyChart';
@@ -27,6 +27,7 @@ export default function HomeScreen() {
   const [videos, setVideos] = useState([]);
   const [weeklyData, setWeeklyData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [todayCompletions, setTodayCompletions] = useState([]);
 
   // Toast
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
@@ -62,13 +63,16 @@ export default function HomeScreen() {
   // ─── Data loading ────────────────────────────────────────
   const loadData = useCallback(async () => {
     try {
-      const [vids, weekly] = await Promise.all([
+      const [vids, weekly, today] = await Promise.all([
         fetchVideos(),
         fetchWeeklyCompletions(),
+        fetchTodayCompletions(),
       ]);
       setVideos(vids);
       setWeeklyData(weekly);
-    } catch {
+      setTodayCompletions(today);
+    } catch (err) {
+      console.error(err);
       showToast('Failed to load data.', 'error');
     } finally {
       setLoading(false);
@@ -187,14 +191,20 @@ export default function HomeScreen() {
               <View style={styles.sectionHeader}>
                 <Text className="font-overlockBold" style={[styles.sectionTitle, { color: colors.text }]}>Daily Challenge</Text>
               </View>
-              {videos.map((video) => (
-                <VideoCard
-                  key={video.id}
-                  video={video}
-                  onComplete={loadData}
-                  onEditPress={openEditModal}
-                />
-              ))}
+              {videos.map((video) => {
+                const isCompletedToday = todayCompletions.some(
+                  c => c.youtube_id === video.youtube_id && (c.reps_completed ?? 1) >= (video.daily_goal ?? 1)
+                );
+                return (
+                  <VideoCard
+                    key={video.id}
+                    video={video}
+                    isCompletedToday={isCompletedToday}
+                    onComplete={loadData}
+                    onEditPress={openEditModal}
+                  />
+                );
+              })}
             </>
           ) : (
             <ShareIntentInfoCard />
