@@ -13,7 +13,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { useAddVideo } from '../context/AddVideoContext';
-import { addVideo } from '../services/db';
+import { addVideo, fetchVideos } from '../services/db';
 import { colors } from '../utils/colors';
 import { Plus } from 'lucide-react-native';
 import ColorPickerModal from './ColorPickerModal';
@@ -40,8 +40,10 @@ export default function AddVideoBottomSheet() {
   const [newVideoTarget, setNewVideoTarget] = useState(1);
   const [adding, setAdding] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [usedColors, setUsedColors] = useState([]);
 
   const isCustomColor = !THEME_COLORS.find(c => c.hex === themeColor);
+  const isColorUsedContext = usedColors.includes(themeColor.toLowerCase());
 
   // Animation values
   const overlayOpacity = useSharedValue(0);
@@ -49,6 +51,11 @@ export default function AddVideoBottomSheet() {
 
   useEffect(() => {
     if (isBottomSheetVisible) {
+      // Fetch videos to lock used colors
+      fetchVideos().then((vids) => {
+        setUsedColors(vids.map(v => v.theme_color?.toLowerCase()));
+      }).catch(console.error);
+
       setShouldRender(true);
       // Wait for Modal mount
       const timer = setTimeout(() => {
@@ -177,6 +184,15 @@ export default function AddVideoBottomSheet() {
                 </TouchableOpacity>
               </View>
 
+              {isColorUsedContext && (
+                <Text 
+                  className="font-overlock" 
+                  style={{ color: '#FF6B6B', fontSize: 13, marginTop: -20, marginBottom: 12 }}
+                >
+                  This color is already used by another video
+                </Text>
+              )}
+
               <ColorPickerModal
                 visible={showPicker}
                 onClose={() => setShowPicker(false)}
@@ -215,9 +231,9 @@ export default function AddVideoBottomSheet() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.btn, styles.addBtn, adding && styles.disabledBtn]}
+                  style={[styles.btn, styles.addBtn, (adding || isColorUsedContext) && styles.disabledBtn]}
                   onPress={handleAdd}
-                  disabled={adding}
+                  disabled={adding || isColorUsedContext}
                 >
                   {adding ? (
                     <ActivityIndicator color="white" size="small" />

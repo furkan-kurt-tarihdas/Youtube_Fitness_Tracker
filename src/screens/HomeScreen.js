@@ -43,6 +43,7 @@ export default function HomeScreen() {
   const [editTitle, setEditTitle] = useState('');
   const [editColor, setEditColor] = useState('');
   const [editVideoTarget, setEditVideoTarget] = useState(1);
+  const [originalColor, setOriginalColor] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -107,6 +108,7 @@ export default function HomeScreen() {
     setEditingVideo(video);
     setEditTitle(video.title);
     setEditColor(video.theme_color || THEME_COLORS[0].hex);
+    setOriginalColor(video.theme_color || THEME_COLORS[0].hex);
     setEditVideoTarget(video.daily_goal || 1);
     setIsEditModalVisible(true);
   }
@@ -118,9 +120,16 @@ export default function HomeScreen() {
 
   const hasChanges = editingVideo && (
     editTitle.trim() !== editingVideo.title ||
-    editColor !== editingVideo.theme_color ||
+    editColor.toLowerCase() !== (editingVideo.theme_color || THEME_COLORS[0].hex).toLowerCase() ||
     editVideoTarget !== (editingVideo.daily_goal || 1)
   );
+
+  const otherUsedColors = videos
+    .filter(v => v.id !== editingVideo?.id)
+    .map(v => v.theme_color?.toLowerCase());
+    
+  const isColorUsedByOther = otherUsedColors.includes(editColor.toLowerCase());
+  const isSaveDisabled = !hasChanges || isColorUsedByOther;
 
   async function handleSave() {
     if (!hasChanges || !editingVideo) return;
@@ -280,6 +289,15 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
 
+              {isColorUsedByOther && (
+                <Text 
+                  className="font-overlock" 
+                  style={{ color: '#FF6B6B', fontSize: 13, marginTop: -12, marginBottom: 12 }}
+                >
+                  This color is already used by another video
+                </Text>
+              )}
+
               <ColorPickerModal
                 visible={showColorPicker}
                 onClose={() => setShowColorPicker(false)}
@@ -324,10 +342,10 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   style={[
                     styles.modalBtn, styles.saveBtn,
-                    (!hasChanges || saving) && styles.btnDisabled,
+                    (isSaveDisabled || saving) && styles.btnDisabled,
                   ]}
                   onPress={handleSave}
-                  disabled={!hasChanges || saving || deleting}
+                  disabled={isSaveDisabled || saving || deleting}
                 >
                   {saving
                     ? <ActivityIndicator color="white" size="small" />

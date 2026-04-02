@@ -25,7 +25,6 @@ export default function ColorPickerModal({ visible, onClose, onSelectColor, init
                 value={selectedColor} 
                 onComplete={onColorSelect}
               >
-                <Preview style={styles.preview} />
                 <Panel1 style={styles.panel} />
                 <HueSlider style={styles.slider} />
                 <Swatches style={styles.swatches} colors={['#D8B4E2', '#FDEFB2', '#B5E4CA', '#F9C4C4', '#A0D2EB', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD']} />

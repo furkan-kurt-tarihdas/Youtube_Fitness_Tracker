@@ -95,6 +95,8 @@ export default function WeeklyChart({ data, isEmpty }) {
                             borderTopRightRadius: isTop ? 4 : 0,
                             borderBottomLeftRadius: isBottom ? 4 : 0,
                             borderBottomRightRadius: isBottom ? 4 : 0,
+                            borderTopWidth: isTop ? 0 : 1,
+                            borderColor: 'rgba(255,255,255,0.4)',
                           }}
                         />
                       );

@@ -272,12 +272,24 @@ export async function addVideo(youtubeUrl, titleHint, themeColor, dailyGoal = 1)
  * Update a video's title and/or theme color.
  */
 export async function updateVideo(id, newTitle, newColor, dailyGoal = 1) {
+  const { data: { user } } = await supabase.auth.getUser();
+  
   const { error } = await supabase
     .from('videos')
     .update({ title: newTitle.trim(), theme_color: newColor, daily_goal: dailyGoal })
     .eq('id', id);
 
   if (error) throw error;
+
+  if (user) {
+    const today = new Date().toISOString().split('T')[0];
+    await supabase
+      .from('completions')
+      .update({ target_reps: dailyGoal })
+      .eq('user_id', user.id)
+      .eq('video_id', id)
+      .eq('completed_date', today);
+  }
 }
 
 /**
