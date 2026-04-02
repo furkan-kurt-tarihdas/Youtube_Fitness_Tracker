@@ -306,70 +306,70 @@ export async function getUserGlobalStreak(userId) {
 export async function getVideoLeaderboard(youtubeId) {
   const { data: { user: currentUser } } = await supabase.auth.getUser();
 
-  // Hedef youtube_id'ye sahip TÜM tamamlanma kayıtlarını direkt tablosundan getir.
+  // Fetch completions with reps_completed; join video daily_goal via videos table
   const { data, error } = await supabase
     .from('completions')
-    .select('user_id, completed_date, profiles!inner(id, username, avatar_url)')
+    .select('user_id, completed_date, reps_completed, videos(daily_goal), profiles!inner(id, username, avatar_url)')
     .eq('youtube_id', youtubeId)
     .order('completed_date', { ascending: false });
 
   if (error) throw error;
   if (!data || data.length === 0) return [];
 
-  // Group completions by user
+  // Group completions by user, collecting only FULLY completed days
   const byUser = {};
-  data.forEach(({ user_id, completed_date, profiles: profile }) => {
-    // Depending on Supabase setup, profile can be an object or an array.
+  data.forEach(({ user_id, completed_date, reps_completed, videos: videoRow, profiles: profile }) => {
     const p = Array.isArray(profile) ? profile[0] : profile;
+    const dailyGoal = videoRow?.daily_goal ?? 1;
+    const reps = reps_completed ?? 0;
+
     if (!byUser[user_id]) {
       byUser[user_id] = {
         id: user_id,
         username: p?.username || 'Anonymous',
         avatar_url: p?.avatar_url || null,
-        dates: [],
+        completedDates: [], // only dates where reps >= dailyGoal
       };
     }
-    byUser[user_id].dates.push(completed_date);
+
+    // Only count this date towards the streak if goal was met
+    if (reps >= dailyGoal) {
+      byUser[user_id].completedDates.push(completed_date);
+    }
   });
 
-  // Define consecutive streak function for leaderboard explicitly
   const toMs = (str) => new Date(str + 'T00:00:00').getTime();
   const DAY_MS = 24 * 60 * 60 * 1000;
-  
+
   const getStreak = (dates) => {
     if (!dates || dates.length === 0) return 0;
-    const sortedDatesDesc = [...new Set(dates)].sort().reverse();
+    const sortedDesc = [...new Set(dates)].sort().reverse();
     const todayStr = new Date().toISOString().split('T')[0];
     const yesterdayStr = new Date(Date.now() - DAY_MS).toISOString().split('T')[0];
-    
-    const firstDate = sortedDatesDesc[0];
-    if (firstDate !== todayStr && firstDate !== yesterdayStr) return 0;
+
+    if (sortedDesc[0] !== todayStr && sortedDesc[0] !== yesterdayStr) return 0;
 
     let streak = 1;
-    for (let i = 1; i < sortedDatesDesc.length; i++) {
-      const diff = toMs(sortedDatesDesc[i - 1]) - toMs(sortedDatesDesc[i]);
+    for (let i = 1; i < sortedDesc.length; i++) {
+      const diff = toMs(sortedDesc[i - 1]) - toMs(sortedDesc[i]);
       if (diff === DAY_MS) streak++;
       else break;
     }
     return streak;
   };
 
-  // Compute streak per user and rank (Adım C)
-  const leaderboard = Object.values(byUser).map(entry => {
-    return {
-      id: entry.id,
-      username: entry.username,
-      avatar_url: entry.avatar_url,
-      streak: getStreak(entry.dates),
-      isCurrentUser: entry.id === currentUser?.id,
-    };
-  });
+  const leaderboard = Object.values(byUser).map(entry => ({
+    id: entry.id,
+    username: entry.username,
+    avatar_url: entry.avatar_url,
+    streak: getStreak(entry.completedDates),
+    isCurrentUser: entry.id === currentUser?.id,
+  }));
 
-  // Sort by streak descending
   leaderboard.sort((a, b) => b.streak - a.streak);
-
   return leaderboard;
 }
+
 
 // ─── Helpers ───────────────────────────────────────────────
 

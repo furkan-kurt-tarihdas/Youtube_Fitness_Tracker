@@ -48,7 +48,6 @@ export default function VideoDetailScreen() {
   const currentReps = Number(todayReps) || 0;
   const goal = Number(video.daily_goal) || 1;
   const isCompletedForToday = currentReps >= goal;
-  const displayDay = currentReps > 0 ? count : count + 1;
   
   const { setHomeTabColor, resetHomeTabColor } = useTheme();
 
@@ -208,6 +207,7 @@ export default function VideoDetailScreen() {
           themeColor={activeColor} 
           videoId={video.id}
           refreshTrigger={count}
+          videoGoal={video.daily_goal || 1}
         />
       </ScrollView>
 
@@ -243,7 +243,7 @@ export default function VideoDetailScreen() {
             >
               {isCompletedForToday 
                 ? 'Done for Today! 🎉' 
-                : `Complete Day ${displayDay} (${currentReps}/${goal})`}
+                : `Complete Day ${count + 1} (${currentReps}/${goal})`}
             </Text>
           )}
         </TouchableOpacity>

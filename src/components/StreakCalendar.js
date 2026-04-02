@@ -25,7 +25,7 @@ const hexToRgba = (hex, alpha) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-export default function StreakCalendar({ themeColor, videoId, refreshTrigger }) {
+export default function StreakCalendar({ themeColor, videoId, refreshTrigger, videoGoal = 1 }) {
   const [currentDate, setCurrentDate] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -34,6 +34,7 @@ export default function StreakCalendar({ themeColor, videoId, refreshTrigger }) 
   const [monthlyData, setMonthlyData] = useState([]);
 
   const activeColor = themeColor || colors.primary;
+  const goal = Number(videoGoal) || 1;
 
   useEffect(() => {
     if (!videoId) return;
@@ -60,10 +61,9 @@ export default function StreakCalendar({ themeColor, videoId, refreshTrigger }) 
   // Calendar math
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfWeek = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
-  // Transform: Sunday=0, Monday=1 -> We want Monday to be index 0
   const offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
 
-  // Process mapping
+  // Accumulate reps per day
   const completionsMap = {};
   monthlyData.forEach(d => {
     if (!d || !d.completed_date) return;
@@ -74,11 +74,13 @@ export default function StreakCalendar({ themeColor, videoId, refreshTrigger }) 
     }
   });
 
-  const getHeatmapBg = (count) => {
-    if (count === 0) return 'transparent';
-    if (count === 1) return hexToRgba(activeColor, 0.4);
-    if (count === 2) return hexToRgba(activeColor, 0.7);
-    return hexToRgba(activeColor, 1);
+  // Goal-aware heatmap: full color only if reps >= goal, partial if in-progress
+  const getHeatmapBg = (reps) => {
+    if (reps === 0) return 'transparent';
+    if (reps >= goal) return hexToRgba(activeColor, 1);   // fully completed
+    // Partial progress: scale opacity proportionally between 0.2 and 0.6
+    const partial = Math.min(reps / goal, 1);
+    return hexToRgba(activeColor, 0.2 + partial * 0.4);
   };
 
   return (
