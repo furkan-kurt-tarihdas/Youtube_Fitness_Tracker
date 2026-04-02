@@ -202,7 +202,7 @@ export default function HomeScreen() {
               </View>
               {videos.map((video) => {
                 const isCompletedToday = todayCompletions.some(
-                  c => c.youtube_id === video.youtube_id && (c.reps_completed ?? 1) >= (video.daily_goal ?? 1)
+                  c => c.youtube_id === video.youtube_id && (c.reps_completed ?? 0) >= (c.target_reps || video.daily_goal || 1)
                 );
                 return (
                   <VideoCard

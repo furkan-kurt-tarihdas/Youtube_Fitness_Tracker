@@ -16,13 +16,13 @@ export default function WeeklyChart({ data, isEmpty }) {
     return Array.from(colorSet);
   }, [data]);
 
-  // GÖREV 1: Haftanın en yüksek toplam reps değerini bul
-  const chartMax = useMemo(() => {
-    const maxRepsInWeek = data.reduce((max, item) => {
+  // Haftanın en yüksek tamamlanan video sayısını bul (her segment = 1 video)
+  const maxVideosInWeek = useMemo(() => {
+    const maxCount = data.reduce((max, item) => {
       const dayTotal = item.totalReps ?? item.colors.length;
       return Math.max(max, dayTotal);
     }, 0);
-    return Math.max(5, maxRepsInWeek); // floor of 5 so the chart never looks gigantic when values are tiny
+    return Math.max(5, maxCount); // floor of 5 for visual stability
   }, [data]);
 
   const toggleFilter = (color) => {
@@ -42,7 +42,7 @@ export default function WeeklyChart({ data, isEmpty }) {
         className="rounded-2xl overflow-hidden pt-4 pb-2"
         style={{ position: 'relative', borderWidth: 1, borderColor: 'rgba(216, 180, 226, 0.4)' }}
       >
-        {/* GÖREV 2: Sabit yükseklik + overflow-hidden + justify-end (aşağıdan yığma) */}
+        {/* Sabit yükseklik + overflow-hidden + justify-end (aşağıdan yığma) */}
         <View
           className="flex-row justify-between items-end px-4 py-0"
           style={{ height: BAR_CONTAINER_HEIGHT + 24, opacity: isEmpty ? 0.25 : 1 }}
@@ -57,12 +57,11 @@ export default function WeeklyChart({ data, isEmpty }) {
               s => activeFilters.length === 0 || activeFilters.includes(s.color)
             );
 
-            // Total reps in view (after filter)
-            const visibleTotal = visibleSegments.reduce((sum, s) => sum + s.reps, 0);
+            const visibleTotal = visibleSegments.length;
 
             return (
               <View key={index} className="items-center justify-end" style={{ height: BAR_CONTAINER_HEIGHT + 24 }}>
-                {/* GÖREV 2: Sabit yükseklik kapsayıcı, overflow-hidden, justify-end */}
+                {/* Sabit yükseklik kapsayıcı, overflow-hidden, justify-end */}
                 <View
                   className="w-7 mb-3"
                   style={{
@@ -81,8 +80,8 @@ export default function WeeklyChart({ data, isEmpty }) {
                       const isBottom = i === 0;
                       const isTop = i === arr.length - 1;
 
-                      // GÖREV 2: Yüzdelik yükseklik hesabı
-                      const segmentHeightPercent = (segment.reps / chartMax) * 100;
+                      // 1 video = 1 blok: yükseklik = (1 / maxVideosInWeek) * 100%
+                      const segmentHeightPercent = (1 / maxVideosInWeek) * 100;
                       const segmentHeightPx = (segmentHeightPercent / 100) * BAR_CONTAINER_HEIGHT;
 
                       return (

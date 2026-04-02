@@ -35,21 +35,23 @@ export async function fetchWeeklyCompletions() {
 
   const { data: completions, error } = await supabase
     .from('completions')
-    .select('completed_date, reps_completed, videos(theme_color)')
+    .select('completed_date, reps_completed, target_reps, videos(theme_color)')
     .eq('user_id', user.id)
     .gte('completed_date', sevenDaysAgo.toISOString().split('T')[0])
     .lte('completed_date', today.toISOString().split('T')[0]);
 
   if (error) throw error;
 
-  // Group by date → map of color → total reps for that color on that day
-  const repsByDateAndColor = {};
-  completions.forEach(({ completed_date, reps_completed, videos: video }) => {
+  // Group by date → set of completed video colors (only if reps >= target)
+  const completedVideosByDate = {};
+  completions.forEach(({ completed_date, reps_completed, target_reps, videos: video }) => {
     const color = video?.theme_color;
     if (!color) return;
-    if (!repsByDateAndColor[completed_date]) repsByDateAndColor[completed_date] = {};
-    repsByDateAndColor[completed_date][color] =
-      (repsByDateAndColor[completed_date][color] ?? 0) + (reps_completed ?? 1);
+    const goal = target_reps || 1;
+    const reps = reps_completed ?? 0;
+    if (reps < goal) return; // not completed — skip
+    if (!completedVideosByDate[completed_date]) completedVideosByDate[completed_date] = new Set();
+    completedVideosByDate[completed_date].add(color);
   });
 
   const result = [];
@@ -57,16 +59,15 @@ export async function fetchWeeklyCompletions() {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
-    const colorMap = repsByDateAndColor[dateStr] ?? {};
-    // Each segment carries { color, reps } so the chart can scale correctly
-    const segments = Object.entries(colorMap).map(([color, reps]) => ({ color, reps }));
-    const totalReps = segments.reduce((sum, s) => sum + s.reps, 0);
+    const colorSet = completedVideosByDate[dateStr] ?? new Set();
+    // 1 segment per completed video, each with reps=1
+    const segments = Array.from(colorSet).map(color => ({ color, reps: 1 }));
+    const totalVideos = segments.length;
     result.push({
       day: DAY_LABELS[d.getDay()],
-      // Keep legacy `colors` array for the filter dots in chart
       colors: segments.map(s => s.color),
       segments,
-      totalReps,
+      totalReps: totalVideos,
     });
   }
 
@@ -85,7 +86,7 @@ export async function fetchTodayCompletions() {
 
   const { data, error } = await supabase
     .from('completions')
-    .select('youtube_id, reps_completed')
+    .select('youtube_id, reps_completed, target_reps')
     .eq('user_id', user.id)
     .eq('completed_date', today);
 
@@ -152,14 +153,16 @@ export async function recordCompletion(video) {
     throw selectError;
   }
 
+  const currentTarget = video.daily_goal || 1;
+
   if (existing) {
-    // 2a. Record exists → UPDATE reps_completed + 1
+    // 2a. Record exists → UPDATE reps_completed + 1, freeze target_reps
     const newReps = (existing.reps_completed ?? 1) + 1;
-    console.log(`[recordCompletion] Updating existing record id=${existing.id} → reps_completed=${newReps}`);
+    console.log(`[recordCompletion] Updating existing record id=${existing.id} → reps_completed=${newReps}, target_reps=${currentTarget}`);
 
     const { data, error } = await supabase
       .from('completions')
-      .update({ reps_completed: newReps })
+      .update({ reps_completed: newReps, target_reps: currentTarget })
       .eq('id', existing.id)
       .select()
       .single();
@@ -172,8 +175,8 @@ export async function recordCompletion(video) {
     console.log('[recordCompletion] Updated successfully:', data);
     return data;
   } else {
-    // 2b. No record → INSERT with reps_completed = 1
-    console.log(`[recordCompletion] Inserting new record for video_id=${video.id}, date=${today}`);
+    // 2b. No record → INSERT with reps_completed = 1, freeze target_reps
+    console.log(`[recordCompletion] Inserting new record for video_id=${video.id}, date=${today}, target_reps=${currentTarget}`);
 
     const { data, error } = await supabase
       .from('completions')
@@ -183,6 +186,7 @@ export async function recordCompletion(video) {
         youtube_id: video.youtube_id,
         completed_date: today,
         reps_completed: 1,
+        target_reps: currentTarget,
       })
       .select()
       .single();
@@ -296,15 +300,18 @@ export async function deleteVideo(id) {
 export async function getUserGlobalStreak(userId) {
   const { data, error } = await supabase
     .from('completions')
-    .select('completed_date')
+    .select('completed_date, reps_completed, target_reps')
     .eq('user_id', userId)
     .order('completed_date', { ascending: false });
 
   if (error) throw error;
   if (!data || data.length === 0) return 0;
 
-  // Deduplicate dates
-  const uniqueDates = [...new Set(data.map(r => r.completed_date))].sort().reverse();
+  // Only count dates where reps met the frozen target
+  const completedDates = data
+    .filter(r => (r.reps_completed ?? 0) >= (r.target_reps || 1))
+    .map(r => r.completed_date);
+  const uniqueDates = [...new Set(completedDates)].sort().reverse();
 
   return consecutiveDaysStreak(uniqueDates);
 }
@@ -317,10 +324,10 @@ export async function getUserGlobalStreak(userId) {
 export async function getVideoLeaderboard(youtubeId) {
   const { data: { user: currentUser } } = await supabase.auth.getUser();
 
-  // Fetch completions with reps_completed; join video daily_goal via videos table
+  // Fetch completions with reps_completed and frozen target_reps
   const { data, error } = await supabase
     .from('completions')
-    .select('user_id, completed_date, reps_completed, videos(daily_goal), profiles!inner(id, username, avatar_url)')
+    .select('user_id, completed_date, reps_completed, target_reps, profiles!inner(id, username, avatar_url)')
     .eq('youtube_id', youtubeId)
     .order('completed_date', { ascending: false });
 
@@ -329,9 +336,9 @@ export async function getVideoLeaderboard(youtubeId) {
 
   // Group completions by user, collecting only FULLY completed days
   const byUser = {};
-  data.forEach(({ user_id, completed_date, reps_completed, videos: videoRow, profiles: profile }) => {
+  data.forEach(({ user_id, completed_date, reps_completed, target_reps, profiles: profile }) => {
     const p = Array.isArray(profile) ? profile[0] : profile;
-    const dailyGoal = videoRow?.daily_goal ?? 1;
+    const goal = target_reps || 1;
     const reps = reps_completed ?? 0;
 
     if (!byUser[user_id]) {
@@ -339,12 +346,12 @@ export async function getVideoLeaderboard(youtubeId) {
         id: user_id,
         username: p?.username || 'Anonymous',
         avatar_url: p?.avatar_url || null,
-        completedDates: [], // only dates where reps >= dailyGoal
+        completedDates: [], // only dates where reps >= frozen target
       };
     }
 
-    // Only count this date towards the streak if goal was met
-    if (reps >= dailyGoal) {
+    // Only count this date towards the streak if frozen goal was met
+    if (reps >= goal) {
       byUser[user_id].completedDates.push(completed_date);
     }
   });
