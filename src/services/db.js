@@ -35,17 +35,21 @@ export async function fetchWeeklyCompletions() {
 
   const { data: completions, error } = await supabase
     .from('completions')
-    .select('completed_date, videos(theme_color)')
+    .select('completed_date, reps_completed, videos(theme_color)')
     .eq('user_id', user.id)
     .gte('completed_date', sevenDaysAgo.toISOString().split('T')[0])
     .lte('completed_date', today.toISOString().split('T')[0]);
 
   if (error) throw error;
 
-  const colorsByDate = {};
-  completions.forEach(({ completed_date, videos: video }) => {
-    if (!colorsByDate[completed_date]) colorsByDate[completed_date] = [];
-    if (video?.theme_color) colorsByDate[completed_date].push(video.theme_color);
+  // Group by date → map of color → total reps for that color on that day
+  const repsByDateAndColor = {};
+  completions.forEach(({ completed_date, reps_completed, videos: video }) => {
+    const color = video?.theme_color;
+    if (!color) return;
+    if (!repsByDateAndColor[completed_date]) repsByDateAndColor[completed_date] = {};
+    repsByDateAndColor[completed_date][color] =
+      (repsByDateAndColor[completed_date][color] ?? 0) + (reps_completed ?? 1);
   });
 
   const result = [];
@@ -53,9 +57,16 @@ export async function fetchWeeklyCompletions() {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
+    const colorMap = repsByDateAndColor[dateStr] ?? {};
+    // Each segment carries { color, reps } so the chart can scale correctly
+    const segments = Object.entries(colorMap).map(([color, reps]) => ({ color, reps }));
+    const totalReps = segments.reduce((sum, s) => sum + s.reps, 0);
     result.push({
       day: DAY_LABELS[d.getDay()],
-      colors: colorsByDate[dateStr] ?? [],
+      // Keep legacy `colors` array for the filter dots in chart
+      colors: segments.map(s => s.color),
+      segments,
+      totalReps,
     });
   }
 
@@ -425,6 +436,6 @@ function buildEmptyWeek() {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today);
     d.setDate(today.getDate() - (6 - i));
-    return { day: DAY_LABELS[d.getDay()], colors: [] };
+    return { day: DAY_LABELS[d.getDay()], colors: [], segments: [], totalReps: 0 };
   });
 }

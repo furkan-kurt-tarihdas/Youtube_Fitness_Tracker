@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { colors } from '../utils/colors';
 
+const BAR_CONTAINER_HEIGHT = 128; // px — the fixed height allocated for all bars (h-32)
+
 export default function WeeklyChart({ data, isEmpty }) {
   const [activeFilters, setActiveFilters] = useState([]);
 
@@ -12,6 +14,15 @@ export default function WeeklyChart({ data, isEmpty }) {
       item.colors.forEach(c => colorSet.add(c));
     });
     return Array.from(colorSet);
+  }, [data]);
+
+  // GÖREV 1: Haftanın en yüksek toplam reps değerini bul
+  const chartMax = useMemo(() => {
+    const maxRepsInWeek = data.reduce((max, item) => {
+      const dayTotal = item.totalReps ?? item.colors.length;
+      return Math.max(max, dayTotal);
+    }, 0);
+    return Math.max(5, maxRepsInWeek); // floor of 5 so the chart never looks gigantic when values are tiny
   }, [data]);
 
   const toggleFilter = (color) => {
@@ -24,39 +35,63 @@ export default function WeeklyChart({ data, isEmpty }) {
 
   return (
     <View className="mt-0 mb-2 px-6">
-      {/* Grafiğin Kendisi — empty ise overlay göster */}
+      {/* Grafik — empty ise overlay göster */}
       <BlurView
         intensity={40}
         tint="light"
         className="rounded-2xl overflow-hidden pt-4 pb-2"
         style={{ position: 'relative', borderWidth: 1, borderColor: 'rgba(216, 180, 226, 0.4)' }}
       >
+        {/* GÖREV 2: Sabit yükseklik + overflow-hidden + justify-end (aşağıdan yığma) */}
         <View
-          className="flex-row justify-between items-end px-4 py-0 h-48"
-          style={{ opacity: isEmpty ? 0.25 : 1 }}
+          className="flex-row justify-between items-end px-4 py-0"
+          style={{ height: BAR_CONTAINER_HEIGHT + 24, opacity: isEmpty ? 0.25 : 1 }}
         >
-          {data.map((item, index) => (
-            <View key={index} className="items-center h-full justify-end">
-              <View className="w-7 flex-col-reverse justify-start items-center mb-3">
-                {item.colors.length === 0 ? (
-                  <View
-                    className="w-full h-8 bg-black/5"
-                    style={{ borderRadius: 6 }}
-                  />
-                ) : (
-                  item.colors
-                    .filter(c => activeFilters.length === 0 || activeFilters.includes(c))
-                    .map((color, i, filteredArray) => {
+          {data.map((item, index) => {
+            // Segments: prefer new `segments` array, fall back to legacy `colors`
+            const rawSegments = item.segments
+              ? item.segments
+              : item.colors.map(c => ({ color: c, reps: 1 }));
+
+            const visibleSegments = rawSegments.filter(
+              s => activeFilters.length === 0 || activeFilters.includes(s.color)
+            );
+
+            // Total reps in view (after filter)
+            const visibleTotal = visibleSegments.reduce((sum, s) => sum + s.reps, 0);
+
+            return (
+              <View key={index} className="items-center justify-end" style={{ height: BAR_CONTAINER_HEIGHT + 24 }}>
+                {/* GÖREV 2: Sabit yükseklik kapsayıcı, overflow-hidden, justify-end */}
+                <View
+                  className="w-7 mb-3"
+                  style={{
+                    height: BAR_CONTAINER_HEIGHT,
+                    overflow: 'hidden',
+                    justifyContent: 'flex-start',
+                    flexDirection: 'column-reverse',
+                  }}
+                >
+                  {rawSegments.length === 0 || visibleTotal === 0 ? (
+                    <View
+                      style={{ width: '100%', height: 8, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 6 }}
+                    />
+                  ) : (
+                    visibleSegments.map((segment, i, arr) => {
                       const isBottom = i === 0;
-                      const isTop = i === filteredArray.length - 1;
+                      const isTop = i === arr.length - 1;
+
+                      // GÖREV 2: Yüzdelik yükseklik hesabı
+                      const segmentHeightPercent = (segment.reps / chartMax) * 100;
+                      const segmentHeightPx = (segmentHeightPercent / 100) * BAR_CONTAINER_HEIGHT;
+
                       return (
                         <View
                           key={i}
-                          className="w-full"
                           style={{
-                            backgroundColor: color,
-                            height: i === 0 ? 50 : 35,
-                            marginBottom: 0,
+                            width: '100%',
+                            height: segmentHeightPx,
+                            backgroundColor: segment.color,
                             borderTopLeftRadius: isTop ? 4 : 0,
                             borderTopRightRadius: isTop ? 4 : 0,
                             borderBottomLeftRadius: isBottom ? 4 : 0,
@@ -65,13 +100,14 @@ export default function WeeklyChart({ data, isEmpty }) {
                         />
                       );
                     })
-                )}
+                  )}
+                </View>
+                <Text className="text-xs font-overlockBold font-semibold text-gray-600">
+                  {item.day}
+                </Text>
               </View>
-              <Text className="text-xs font-overlockBold font-semibold text-gray-600">
-                {item.day}
-              </Text>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* Empty State Overlay */}
