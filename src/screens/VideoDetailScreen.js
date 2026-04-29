@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StatusBar, Image, ActivityIndicator, SafeAreaView, ImageBackground, Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import YoutubeIframe from 'react-native-youtube-iframe';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Animated from 'react-native-reanimated';
 
@@ -15,7 +16,7 @@ import { useMascotAnimation } from '../hooks/useMascotAnimation';
 
 const mascotImage = require('../../assets/day_completed.png');
 const backgroundImage = require('../../assets/bg_lavender.png');
-const placeholderImage = require('../../assets/video_placeholder.png');
+
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const VIDEO_WIDTH = SCREEN_WIDTH - 32;
@@ -56,7 +57,8 @@ function extractVideoId(raw) {
 export default function VideoDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  
+  const insets = useSafeAreaInsets();
+
   const video = route.params?.video || {
     title: 'Detail Screen',
     theme_color: colors.primary
@@ -79,6 +81,7 @@ export default function VideoDetailScreen() {
   const { mascotStyle, triggerAnimation } = useMascotAnimation();
 
   const [isVideoReady, setIsVideoReady] = useState(false);
+  const isScreenFocused = useIsFocused();
 
   const onCompletePress = () => {
     handleRecordCompletion(async () => {
@@ -97,22 +100,26 @@ export default function VideoDetailScreen() {
       style={{ flex: 1 }}
       resizeMode="cover"
     >
-      <SafeAreaView style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
         <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-      
-        <VideoHeader 
-          title={video.title} 
-          onBackPress={() => navigation.goBack()} 
-        />
-        
-        <ScrollView 
-          contentContainerStyle={{ paddingBottom: 220, paddingTop: 20 }} 
+
+        {/* Floating header — floats above scroll, respects safe area top */}
+        <View style={{ position: 'absolute', top: insets.top - 20, left: 0, right: 0, zIndex: 20 }}>
+          <VideoHeader
+            title={video.title}
+            onBackPress={() => navigation.goBack()}
+          />
+        </View>
+
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 220, paddingTop: insets.top + 80 }}
           showsVerticalScrollIndicator={false}
         >
           {/* ── YouTube In-App Player ── */}
           {(() => {
             const videoId = extractVideoId(video.youtube_id) || extractVideoId(video.url);
             if (!videoId) return null;
+            const thumbnailUri = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
             return (
               <View
                 style={{
@@ -130,48 +137,63 @@ export default function VideoDetailScreen() {
                   height: PLAYER_HEIGHT,
                 }}
               >
+                {/* Dynamic YouTube thumbnail + loading spinner */}
                 {!isVideoReady && (
-                  <Image 
-                    source={placeholderImage}
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }}
-                    resizeMode="cover"
+                  <View
+                    style={{
+                      position: 'absolute', top: 0, left: 0,
+                      width: '100%', height: '100%',
+                      zIndex: 1,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Image
+                      source={{ uri: thumbnailUri }}
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                      resizeMode="cover"
+                    />
+                    <ActivityIndicator size="large" color={activeColor} />
+                  </View>
+                )}
+                {/* Only mount iframe while screen is focused – memory leak guard */}
+                {isScreenFocused && (
+                  <YoutubeIframe
+                    height={PLAYER_HEIGHT}
+                    width={VIDEO_WIDTH}
+                    videoId={videoId}
+                    play={false}
+                    onReady={() => setIsVideoReady(true)}
                   />
                 )}
-                <YoutubeIframe
-                  height={PLAYER_HEIGHT}
-                  width={VIDEO_WIDTH}
-                  videoId={videoId}
-                  play={false}
-                  onReady={() => setIsVideoReady(true)}
-                />
               </View>
             );
           })()}
 
           <Leaderboard data={leaderboard} themeColor={activeColor} />
-          <StreakCalendar 
-            themeColor={activeColor} 
+          <StreakCalendar
+            themeColor={activeColor}
             videoId={video.id}
             refreshTrigger={count}
             videoGoal={video.daily_goal || 1}
           />
         </ScrollView>
 
-        <Animated.View 
+        <Animated.View
           style={[
             { position: 'absolute', bottom: 80, right: -20, zIndex: 10 },
             mascotStyle,
           ]}
           pointerEvents="none"
         >
-          <Image 
-            source={mascotImage} 
-            style={{ width: 250, height: 250, resizeMode: 'contain' }} 
+          <Image
+            source={mascotImage}
+            style={{ width: 250, height: 250, resizeMode: 'contain' }}
           />
         </Animated.View>
 
         <View className="absolute bottom-28 left-6 right-6 pb-2 bg-transparent" pointerEvents="box-none">
-          <TouchableOpacity 
+          <TouchableOpacity
             activeOpacity={0.8}
             onPress={onCompletePress}
             disabled={loading || isCompletedForToday}
@@ -181,18 +203,18 @@ export default function VideoDetailScreen() {
             {loading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text 
+              <Text
                 className="text-lg font-overlockBold tracking-wider"
                 style={{ color: isCompletedForToday ? '#2E7D32' : 'white' }}
               >
-                {isCompletedForToday 
-                  ? 'Done for Today! 🎉' 
+                {isCompletedForToday
+                  ? 'Done for Today! 🎉'
                   : `Complete Day ${currentStreak + 1} (${nextRep}/${goal})`}
               </Text>
             )}
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     </ImageBackground>
   );
 }

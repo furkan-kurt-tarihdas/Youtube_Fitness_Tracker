@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, View, Text, StatusBar, StyleSheet, ActivityIndicator, ImageBackground } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../utils/colors';
 import Header from '../components/Header';
 import WeeklyChart from '../components/WeeklyChart';
@@ -15,6 +15,7 @@ const backgroundImage = require('../../assets/bg_lavender.png');
 export default function HomeScreen() {
   const { showToast } = useToast();
   const { videos, weeklyData, todayCompletions, loading, loadData } = useHomeData(showToast);
+  const insets = useSafeAreaInsets();
 
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editingVideo, setEditingVideo] = useState(null);
@@ -33,9 +34,9 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <View style={[styles.centered, { paddingTop: insets.top }]}>
         <ActivityIndicator size="large" color={colors.primary} />
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -45,11 +46,11 @@ export default function HomeScreen() {
       style={{ flex: 1 }}
       resizeMode="cover"
     >
-      <SafeAreaView style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
         <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 140 }}
+          contentContainerStyle={{ paddingBottom: 140, paddingTop: insets.top }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -90,7 +91,7 @@ export default function HomeScreen() {
           onSaveSuccess={loadData}
           onDeleteSuccess={loadData}
         />
-      </SafeAreaView>
+      </View>
     </ImageBackground>
   );
 }
