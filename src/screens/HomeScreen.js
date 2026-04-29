@@ -63,7 +63,7 @@ export default function HomeScreen() {
               <View style={styles.sectionHeader}>
                 <Text className="font-overlockBold" style={[styles.sectionTitle, { color: colors.text }]}>Daily Challenge</Text>
               </View>
-              {videos.map((video) => {
+              {videos.map((video, index) => {
                 const isCompletedToday = todayCompletions.some(
                   c => c.youtube_id === video.youtube_id && (c.reps_completed ?? 0) >= (c.target_reps || video.daily_goal || 1)
                 );
@@ -71,6 +71,7 @@ export default function HomeScreen() {
                   <VideoCard
                     key={video.id}
                     video={video}
+                    index={index}
                     isCompletedToday={isCompletedToday}
                     onComplete={loadData}
                     onEditPress={openEditModal}
